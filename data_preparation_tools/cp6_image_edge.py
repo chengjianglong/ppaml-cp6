@@ -63,7 +63,7 @@ class CP6ImageEdge:
 
 
     @staticmethod
-    def read_edges_from_file( fn ):
+    def read_edges_from_file( fn, nodes_to_keep = dict() ):
         edges = list()
         node_ids = dict()
         c_line = 0
@@ -78,15 +78,25 @@ class CP6ImageEdge:
                     raise AssertionError( '%s line %d: expected 10 fields, got %d' % \
                                           (fn, c_line, len(fields) ))
                 (image_A_id, image_B_id) = (int(fields[0]), int(fields[1]))
-                # n_groups = fields[2], n_words = fields[3]
-                sharedGroups = map( int, fields[4].split(',')) if fields[4] != 'none' else list()
-                sharedWords = map( int, fields[5].split(',')) if fields[5] != 'none' else list()
-                sharedWordTypes = map( int, fields[6].split(',')) if fields[6] != 'none' else list()
-                edges.append( CP6ImageEdge( image_A_id, image_B_id, \
-                                            sharedGroups, sharedWords, sharedWordTypes, \
-                                            fields[7], fields[8], fields[9] ))
-                node_ids[ image_A_id ] = True
-                node_ids[ image_B_id ] = True
+                if (len(nodes_to_keep)==0) or \
+                   ( (image_A_id in nodes_to_keep) and (image_B_id in nodes_to_keep)):
+                    # n_groups = fields[2], n_words = fields[3]
+                    sharedGroups = map( int, fields[4].split(',')) if fields[4] != 'none' else list()
+                    sharedWords = map( int, fields[5].split(',')) if fields[5] != 'none' else list()
+                    sharedWordTypes = map( int, fields[6].split(',')) if fields[6] != 'none' else list()
+                    edges.append( CP6ImageEdge( image_A_id, image_B_id, \
+                                                sharedGroups, sharedWords, sharedWordTypes, \
+                                                fields[7], fields[8], fields[9] ))
+                    node_ids[ image_A_id ] = True
+                    node_ids[ image_B_id ] = True
         return ( sorted(node_ids.keys()), edges )
+
+    @staticmethod
+    def edges_in_nodeset( paths, phase_key, nodes ):
+        fn = paths.phase_tables[phase_key].image_edge_table
+        node_id_dict = dict( [id, True] for id in nodes)
+        edges = CP6ImageEdge.read_edges_from_file( fn, node_id_dict )
+        sys.stderr.write('Info: read %d edges\n' % len(edges))
+        return edges
 
 

@@ -54,10 +54,11 @@ class CP6Data:
                            ( c_iit_groups * 1.0 / self.n_mir_ids, c_iit_words * 1.0 / self.n_mir_ids ))
 
         self.mcauley_edge_features = CP6McAuleyEdgeFeatures( self.paths.edge_features_path )
-
+        self.splits = dict()
 
     def set_splits( self ):
-        (self.p1test, self.p1train, self.p2test, self.p2train) = CP6Split.get_splits( self )
+        (self.splits['r1test'], self.splits['r1train'], self.splits['r2test'], self.splits['r2train']) = \
+          CP6Split.get_splits( self )
 
     def get_mirlabel_set( self, id ):
         s = set()
@@ -102,24 +103,24 @@ class CP6Data:
                 photo = self.xmldata.mir_nodes[ mir_id ]
                 exif = self.exifdata[ mir_id ]
 
-                f.write( '%d ' % mir_id )
-                f.write( '%d ' % int(photo.get('id')))
-                f.write( '%s ' % CP6Util.qstr( photo.find('owner').get('nsid')))
-                f.write( '%s ' % CP6Util.qstr( photo.find('title').text ))
-                f.write( '%s ' % CP6Util.qstr( photo.find('description').text ))
+                f.write( '%d ' % mir_id ) # 0
+                f.write( '%d ' % int(photo.get('id'))) # 1
+                f.write( '%s ' % CP6Util.qstr( photo.find('owner').get('nsid'))) # 2
+                f.write( '%s ' % CP6Util.qstr( photo.find('title').text )) # 3
+                f.write( '%s ' % CP6Util.qstr( photo.find('description').text )) # 4
 
-                if (exif.valid):
+                if (exif.valid):  # 5 6 7
                     f.write( '%s %s %s ' % (exif.exif_date, exif.exif_time, exif.exif_flash ))
                 else:
                     f.write( 'none none U ')
 
                 locality = photo.find('locality')
-                if locality:
+                if locality: # 8
                     f.write( '%s ' % CP6Util.qstr( locality.text ))
                 else:
                     f.write( 'none ' )
 
-                f.write( '%s\n' % self.get_label_vector_str( data_split, mir_id ))
+                f.write( '%s\n' % self.get_label_vector_str( data_split, mir_id ))  #9
 
     @staticmethod
     def textwrapper( node ):
@@ -235,25 +236,25 @@ class CP6Data:
         sys.stderr.write('Info: Found %d missed McAuley user flags; %d edges with no words or groups\n' % (n_mcauley_missed_user_flag, n_empty_group_word))
         return edges
 
+    def write_global_tables( self ):
+        self.write_label_table()
+        self.imglut.write_image_indicator_lookup_table( self.paths.image_indicator_lut_path )
+
+    def write_phase_table( self, phase_key ):
+        s = self.splits[ phase_key ]
+        t = self.p.phase_tables[ phase_key ]
+        self.write_image_table( s, t.image_table )
+        self.write_image_indicator_table( s, t.image_indicator_table )
+        CP6ImageEdge.write_edge_table( t.image_edge_table, self.get_image_edges( s ))
 
 if __name__ == '__main__':
     p = CP6Paths()
     d = CP6Data( p )
-    d.write_label_table()
     d.set_splits()
 
-    d.write_image_table( d.p1train, p.p1train_table_path )
-#    d.write_image_table( d.p1test, p.p1test_table_path )
-#    d.write_image_table( d.p2train, p.p2train_table_path )
-#    d.write_image_table( d.p2test, p.p2test_table_path )
-    d.imglut.write_image_indicator_lookup_table( p.image_indicator_lut_path )
+    # d.write_global_tables()
 
-    d.write_image_indicator_table( d.p1train, p.p1train_imgind_table_path )
-#    d.write_image_indicator_table( d.p1test, p.p1test_imgind_table_path )
-#    d.write_image_indicator_table( d.p2train, p.p2train_imgind_table_path )
-#    d.write_image_indicator_table( d.p2test, p.p2test_imgind_table_path )
-
-    CP6ImageEdge.write_edge_table( p.p1train_img_edge_table_path, d.get_image_edges( d.p1train ) )
-#    d.write_edge_table( d.get_image_edges( d.p1test ), p.p1test_img_edge_table_path )
-#    d.write_edge_table( d.get_image_edges( d.p2train ), p.p2train_img_edge_table_path )
-#    d.write_edge_table( d.get_image_edges( d.p2test ), p.p2test_img_edge_table_path )
+    # d.write_phase_table( 'r1train' )
+    # d.write_phase_table( 'r1test' )
+    # d.write_phase_table( 'r2train' )
+    # d.write_phase_table( 'r2test' )

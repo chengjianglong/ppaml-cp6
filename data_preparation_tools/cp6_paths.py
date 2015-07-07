@@ -2,6 +2,12 @@
 ## simple class holding all the paths we expect to use
 ##
 
+class CP6PhaseTable:
+    def __init__( self, prefix, tag ):
+        self.image_table = '%s/cp6_image_table_%s.txt' % (prefix, tag )
+        self.image_indicator_table = '%s/cp6_image_indicator_table_%s.txt' % (prefix, tag )
+        self.image_edge_table = '%s/cp6_image_edge_table_%s.txt' % (prefix, tag )
+
 class CP6Paths:
 
     def __init__( self ):
@@ -27,23 +33,11 @@ class CP6Paths:
         # path to the label table
         self.label_table_path = output_prefix+'/cp6_label_table.txt'
 
-        # the image tables
-        self.p1train_table_path = output_prefix+'/cp6_image_table_round_1_train.txt'
-        self.p1test_table_path = output_prefix+'/cp6_image_table_round_1_test.txt'
-        self.p2train_table_path = output_prefix+'/cp6_image_table_round_2_train.txt'
-        self.p2test_table_path = output_prefix+'/cp6_image_table_round_2_test.txt'
-
         # the image indicator lookup table
         self.image_indicator_lut_path = output_prefix+"/cp6_image_indicator_lookup_table.txt"
 
-        # the image indicator tables
-        self.p1train_imgind_table_path = output_prefix+'/cp6_image_indicator_table_round_1_train.txt'
-        self.p1test_imgind_table_path = output_prefix+'/cp6_image_indicator_table_round_1_test.txt'
-        self.p2train_imgind_table_path = output_prefix+'/cp6_image_indicator_table_round_2_train.txt'
-        self.p2test_imgind_table_path = output_prefix+'/cp6_image_indicator_table_round_2_test.txt'
-
-        # the image edge tables
-        self.p1train_img_edge_table_path = output_prefix+'/cp6_image_edge_table_round_1_train.txt'
-        self.p1test_img_edge_table_path = output_prefix+'/cp6_image_edge_table_round_1_test.txt'
-        self.p2train_img_edge_table_path = output_prefix+'/cp6_image_edge_table_round_2_train.txt'
-        self.p2test_img_edge_table_path = output_prefix+'/cp6_image_edge_table_round_2_test.txt'
+        self.phase_tables = dict()
+        self.phase_tables['r1train'] = CP6PhaseTable( output_prefix, 'round_1_train' )
+        self.phase_tables['r1test'] = CP6PhaseTable( output_prefix, 'round_1_test' )
+        self.phase_tables['r2train'] = CP6PhaseTable( output_prefix, 'round_2_train' )
+        self.phase_tables['r2test'] = CP6PhaseTable( output_prefix, 'round_2_test' )
