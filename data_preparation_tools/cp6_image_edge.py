@@ -95,7 +95,7 @@ class CP6ImageEdge:
     def edges_in_nodeset( paths, phase_key, nodes ):
         fn = paths.phase_tables[phase_key].image_edge_table
         node_id_dict = dict( [id, True] for id in nodes)
-        edges = CP6ImageEdge.read_edges_from_file( fn, node_id_dict )
+        (nodes, edges) = CP6ImageEdge.read_edges_from_file( fn, node_id_dict )
         sys.stderr.write('Info: read %d edges\n' % len(edges))
         return edges
 
