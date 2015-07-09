@@ -1,5 +1,6 @@
 import sys
 
+from collections import defaultdict
 from cp6_paths import CP6Paths
 from cp6_xml import CP6XML
 from cp6_exifdata import CP6EXIFData
@@ -59,6 +60,29 @@ class CP6Data:
     def set_splits( self ):
         (self.splits['r1test'], self.splits['r1train'], self.splits['r2test'], self.splits['r2train']) = \
           CP6Split.get_splits( self )
+
+    def count_labels_in_split( self, data_split ):
+        label_count_map = defaultdict( int )
+        for mir_id in data_split.ids:
+            for label in self.get_mirlabel_set( mir_id ):
+                label_count_map[ label ] += 1
+        return label_count_map
+
+    def write_debug_label_count_csv( self, fn ):
+        counts = dict()
+        for split in self.splits:
+            counts[ split ] = self.count_labels_in_split( self.splits[ split ])
+
+        with open( fn, 'w') as f:
+            f.write('label,r1rain,r1test,r2train,r2test,total\n');
+            for label in self.labels:
+                f.write('%s,' % label)
+                sum = 0
+                for s in ('r1train','r1test','r2train','r2test'):
+                    n = counts[s][label]
+                    f.write('%d,' % n)
+                    sum += n
+                f.write('%d\n' % sum)
 
     def get_mirlabel_set( self, id ):
         s = set()
@@ -252,6 +276,7 @@ if __name__ == '__main__':
     d = CP6Data( p )
     d.set_splits()
 
+    # d.write_debug_label_count_csv( 'labelcount.csv' )
     # d.write_global_tables()
 
     # d.write_phase_table( 'r1train' )
