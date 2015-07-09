@@ -50,7 +50,7 @@ def make_graph( node_id_map, nodes, edges, edges_predicate, output_fn, tag ):
     ctx = cairo.Context( plot.surface )
     ctx.set_font_size(36)
     drawer = TextDrawer( ctx, "Label: '%s'\n%s\n%d nodes, %d edges" % \
-                         (LABEL, tag, len(nodes), len(graph_edges)), halign=TextDrawer.LEFT)
+                         (LABEL, tag, len(nodes), len(graph_edges)), halign=TextDrawer.RIGHT)
     drawer.draw_at(10,1900,width=1900)
     plot.save()
     sys.stderr.write("Info: wrote %s\n" % output_fn)
