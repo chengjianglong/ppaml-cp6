@@ -40,7 +40,7 @@ class CP6Split:
             if not cp6data.exifdata[ id ].valid:
                 # add data without valid EXIF to training
                 offset = offset + 1
-            elif cp6data.exifdata[ id ].exif_caldate >= mode_split_date:
+            elif cp6data.exifdata[ id ].exif_caldate < mode_split_date:
                 # use for training
                 offset = offset + 1
 
