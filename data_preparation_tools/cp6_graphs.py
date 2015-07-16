@@ -42,7 +42,7 @@ from cp6_util import CP6Util
 from cp6_image_edge import CP6ImageEdge
 import cairo
 
-(PHASE, LABEL) = ('r1train', 'sea')
+(PHASE, LABEL) = ('r1train', 'car')
 
 def shared_groups_only( e ):
     return (len(e.shared_groups) > 0) and \
@@ -94,10 +94,8 @@ edges = CP6ImageEdge.edges_in_nodeset( p, PHASE, nodes)
 # map node and edge IDs to graph vertex ordinals
 node_id_map = dict( [val, idx] for (idx, val) in enumerate(nodes))
 
-make_graph( node_id_map, nodes, edges, shared_groups_only, "sea.group-only.png", "shared groups only")
-make_graph( node_id_map, nodes, edges, shared_flags_only, "sea.flags-only.png", "same user/location/contact only")
-make_graph( node_id_map, nodes, edges, all_edges, "sea.all-edges.png", "any relationship")
+make_graph( node_id_map, nodes, edges, shared_groups_only, "%s.group-only.png" % LABEL, "shared groups only")
+make_graph( node_id_map, nodes, edges, shared_flags_only, "%s.flags-only.png" % LABEL, "same user/location/contact only")
+make_graph( node_id_map, nodes, edges, all_edges, "%s.all-edges.png" % LABEL, "any relationship")
 for n in (1,2,5,10,15,20):
-    make_graph( node_id_map, nodes, edges, functools.partial(only_N_shared_words, N=n), "sea.%02d-shared-word.png" % n , "Exactly %d shared word(s)" % n)
-
-    
+    make_graph( node_id_map, nodes, edges, functools.partial(only_N_shared_words, N=n), "%s.%02d-shared-word.png" % (LABEL, n) , "Exactly %d shared word(s)" % n)
