@@ -34,8 +34,9 @@
 ##
 
 import sys
-from cp6_paths import CP6Paths, CP6PhaseTable
 from collections import defaultdict
+
+from cp6.util.paths import CP6Paths, CP6PhaseTable
 
 class CP6Util:
 

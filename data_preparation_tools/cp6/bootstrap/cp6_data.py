@@ -32,14 +32,14 @@
 import sys
 
 from collections import defaultdict
-from cp6_paths import CP6Paths
-from cp6_xml import CP6XML
-from cp6_exifdata import CP6EXIFData
-from cp6_split import CP6Split
-from cp6_util import CP6Util
-from cp6_image_indicator_lookup import CP6ImageIndicatorLookupTable, CP6ImageIndicator
-from cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
-from cp6_image_edge import CP6ImageEdge
+from cp6.util.paths import CP6Paths
+from cp6.bootstrap.cp6_xml import CP6XML
+from cp6.tables.cp6_exifdata import CP6EXIFData
+from cp6.util.cp6_split import CP6Split
+from cp6.util.cp6_util import CP6Util
+from cp6.tables.cp6_image_indicator_lookup import CP6ImageIndicatorLookupTable, CP6ImageIndicator
+from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
+from cp6.tables.cp6_image_edge import CP6ImageEdge
 
 class CP6Data:
 
@@ -297,7 +297,7 @@ class CP6Data:
 
     def write_phase_table( self, phase_key ):
         s = self.splits[ phase_key ]
-        t = self.p.phase_tables[ phase_key ]
+        t = self.paths.phase_tables[ phase_key ]
         self.write_image_table( s, t.image_table )
         self.write_image_indicator_table( s, t.image_indicator_table )
         CP6ImageEdge.write_edge_table( t.image_edge_table, self.get_image_edges( s ))
@@ -307,10 +307,10 @@ if __name__ == '__main__':
     d = CP6Data( p )
     d.set_splits()
 
-    # d.write_debug_label_count_csv( 'labelcount.csv' )
-    # d.write_global_tables()
+    d.write_debug_label_count_csv( 'labelcount.csv' )
+    d.write_global_tables()
 
-    # d.write_phase_table( 'r1train' )
+    d.write_phase_table( 'r1train' )
     # d.write_phase_table( 'r1test' )
     # d.write_phase_table( 'r2train' )
     # d.write_phase_table( 'r2test' )

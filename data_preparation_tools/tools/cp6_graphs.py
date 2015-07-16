@@ -35,12 +35,14 @@
 
 import sys
 import functools
+
+import cairo
 from igraph import *
 from igraph.drawing.text import TextDrawer
-from cp6_paths import CP6Paths
-from cp6_util import CP6Util
-from cp6_image_edge import CP6ImageEdge
-import cairo
+
+from cp6.util.paths import CP6Paths
+from cp6.util.cp6_util import CP6Util
+from cp6.tables.cp6_image_edge import CP6ImageEdge
 
 (PHASE, LABEL) = ('r1train', 'car')
 

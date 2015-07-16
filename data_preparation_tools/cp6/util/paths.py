@@ -72,3 +72,6 @@ class CP6Paths:
         self.phase_tables['r1test'] = CP6PhaseTable( output_prefix, 'round_1_test' )
         self.phase_tables['r2train'] = CP6PhaseTable( output_prefix, 'round_2_train' )
         self.phase_tables['r2test'] = CP6PhaseTable( output_prefix, 'round_2_test' )
+
+        output_mcauley_path = '/Users/collinsr/work/ppaml/2015-06-cp6-prep/ppaml-tables-mcauley'
+        

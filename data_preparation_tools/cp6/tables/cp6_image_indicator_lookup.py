@@ -34,7 +34,7 @@
 ##
 
 import sys
-from cp6_util import CP6Util
+from cp6.util.cp6_util import CP6Util
 
 
 class CP6ImageIndicatorEntry:
