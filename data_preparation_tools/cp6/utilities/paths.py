@@ -33,13 +33,13 @@
 ## simple class holding all the paths we expect to use
 ##
 
-class CP6PhaseTable:
+class PhaseTable:
     def __init__( self, prefix, tag ):
         self.image_table = '%s/cp6_image_table_%s.txt' % (prefix, tag )
         self.image_indicator_table = '%s/cp6_image_indicator_table_%s.txt' % (prefix, tag )
         self.image_edge_table = '%s/cp6_image_edge_table_%s.txt' % (prefix, tag )
 
-class CP6Paths:
+class Paths:
 
     def __init__( self ):
         prefix = '/Users/collinsr/work/ppaml/2015-06-cp6-prep'
@@ -68,10 +68,10 @@ class CP6Paths:
         self.image_indicator_lut_path = output_prefix+"/cp6_image_indicator_lookup_table.txt"
 
         self.phase_tables = dict()
-        self.phase_tables['r1train'] = CP6PhaseTable( output_prefix, 'round_1_train' )
-        self.phase_tables['r1test'] = CP6PhaseTable( output_prefix, 'round_1_test' )
-        self.phase_tables['r2train'] = CP6PhaseTable( output_prefix, 'round_2_train' )
-        self.phase_tables['r2test'] = CP6PhaseTable( output_prefix, 'round_2_test' )
+        self.phase_tables['r1train'] = PhaseTable( output_prefix, 'round_1_train' )
+        self.phase_tables['r1test'] = PhaseTable( output_prefix, 'round_1_test' )
+        self.phase_tables['r2train'] = PhaseTable( output_prefix, 'round_2_train' )
+        self.phase_tables['r2test'] = PhaseTable( output_prefix, 'round_2_test' )
 
         output_mcauley_path = '/Users/collinsr/work/ppaml/2015-06-cp6-prep/ppaml-tables-mcauley'
         

@@ -37,7 +37,7 @@
 import sys
 import datetime
 
-class CP6Split:
+class DataSplit:
     (TEST, TRAIN) = (0, 1)
 
     def __init__( self, ids, r, m ):
@@ -51,10 +51,10 @@ class CP6Split:
 
     @staticmethod
     def get_splits( cp6data ):
-        splits = [ CP6Split( [], 1, CP6Split.TEST), \
-                CP6Split( [], 1, CP6Split.TRAIN), \
-                CP6Split( [], 2, CP6Split.TEST), \
-                CP6Split( [], 2, CP6Split.TRAIN) ]
+        splits = [ DataSplit( [], 1, DataSplit.TEST), \
+                DataSplit( [], 1, DataSplit.TRAIN), \
+                DataSplit( [], 2, DataSplit.TEST), \
+                DataSplit( [], 2, DataSplit.TRAIN) ]
 
         mode_split_date = datetime.date( 2007, 12, 1 )
 

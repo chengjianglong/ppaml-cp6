@@ -40,8 +40,8 @@ import cairo
 from igraph import *
 from igraph.drawing.text import TextDrawer
 
-from cp6.util.paths import CP6Paths
-from cp6.util.cp6_util import CP6Util
+from cp6.utilities.paths import Paths
+from cp6.utilities.util import Util
 from cp6.tables.cp6_image_edge import CP6ImageEdge
 
 (PHASE, LABEL) = ('r1train', 'car')
@@ -89,8 +89,8 @@ def make_graph( node_id_map, nodes, edges, edges_predicate, output_fn, tag ):
     sys.stderr.write("Info: wrote %s\n" % output_fn)
 
 
-p = CP6Paths()
-nodes = CP6Util.nodes_with_label(p, PHASE, LABEL)
+p = Paths()
+nodes = Util.nodes_with_label(p, PHASE, LABEL)
 edges = CP6ImageEdge.edges_in_nodeset( p, PHASE, nodes)
 
 # map node and edge IDs to graph vertex ordinals

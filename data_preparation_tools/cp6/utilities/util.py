@@ -36,9 +36,9 @@
 import sys
 from collections import defaultdict
 
-from cp6.util.paths import CP6Paths, CP6PhaseTable
+from cp6.utilities.paths import Paths
 
-class CP6Util:
+class Util:
 
     @staticmethod
     def qstr( s ):
@@ -86,7 +86,7 @@ class CP6Util:
                   '""', 'a "b c" d', '"a" b c', ' "a " b c ', '"a ""b " "c" ', '"a""b""c"', \
                   'a b "c d""e f"', ' a b d "e' ]:
             sys.stderr.write('TEST: input \'%s\'\n' % s)
-            words = CP6Util.qstr_split(s)
+            words = Util.qstr_split(s)
             for i in range(0, len(words)):
                 sys.stderr.write('TEST: output %d / %d: \'%s\'\n' % (i, len(words), words[i]))
 
@@ -100,7 +100,7 @@ class CP6Util:
                 raw_line = f.readline()
                 if not raw_line:
                     break
-                fields = CP6Util.qstr_split( raw_line )
+                fields = Util.qstr_split( raw_line )
                 id2label[ int(fields[0]) ] = fields[1]
                 label2id[ fields[1] ] = int(fields[0])
         return (id2label, label2id)
@@ -113,7 +113,7 @@ class CP6Util:
                 raw_line = f.readline()
                 if not raw_line:
                     break
-                fields = CP6Util.qstr_split( raw_line )
+                fields = Util.qstr_split( raw_line )
                 if len(fields) != 10:
                     raise AssertionError("Expected 10 fields in '%s', found %d\n" % (raw_line, len(fields)))
                 for (ind, val) in enumerate( fields[9].split(',')):
@@ -129,7 +129,7 @@ class CP6Util:
                 raw_line = f.readline()
                 if not raw_line:
                     break
-                fields = CP6Util.qstr_split( raw_line )
+                fields = Util.qstr_split( raw_line )
                 if len(fields) != 10:
                     raise AssertionError("Expected 10 fields in '%s', found %d\n" % (raw_line, len(fields)))
                 labels = map(int, fields[9].split(','))
@@ -140,21 +140,21 @@ class CP6Util:
 
     @staticmethod
     def label_census( paths, phase_key ):
-        (id2label, label2id) = CP6Util.read_label_table( paths.label_table_path )
-        label_vector_count = CP6Util.count_labels_in_image_table( paths.phase_tables[phase_key].image_table )
+        (id2label, label2id) = Util.read_label_table( paths.label_table_path )
+        label_vector_count = Util.count_labels_in_image_table( paths.phase_tables[phase_key].image_table )
         for ind in label_vector_count:
             sys.stdout.write('Info: label "%s" appears %d times\n' % (id2label[ind], label_vector_count[ind]))
 
     @staticmethod
     def nodes_with_label( paths, phase_key, label_string ):
-        (id2label, label2id) = CP6Util.read_label_table( paths.label_table_path )
-        nodes = CP6Util.node_ids_with_label_in_image_table( paths.phase_tables[phase_key].image_table, label2id[label_string])
+        (id2label, label2id) = Util.read_label_table( paths.label_table_path )
+        nodes = Util.node_ids_with_label_in_image_table( paths.phase_tables[phase_key].image_table, label2id[label_string])
         return nodes
 
 
 if __name__ == '__main__':
-    # CP6Util.label_census( CP6Paths(), 'r1train')
-    CP6Util.nodes_with_label( CP6Paths(), 'r1train', 'sea')
+    # Util.label_census( Paths(), 'r1train')
+    Util.nodes_with_label( Paths(), 'r1train', 'sea')
 
 
 

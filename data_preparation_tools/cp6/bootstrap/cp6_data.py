@@ -32,11 +32,12 @@
 import sys
 
 from collections import defaultdict
-from cp6.util.paths import CP6Paths
+
+from cp6.utilities.paths import Paths
+from cp6.utilities.data_split import DataSplit
+from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
 from cp6.tables.cp6_exifdata import CP6EXIFData
-from cp6.util.cp6_split import CP6Split
-from cp6.util.cp6_util import CP6Util
 from cp6.tables.cp6_image_indicator_lookup import CP6ImageIndicatorLookupTable, CP6ImageIndicator
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
 from cp6.tables.cp6_image_edge import CP6ImageEdge
@@ -90,7 +91,7 @@ class CP6Data:
 
     def set_splits( self ):
         (self.splits['r1test'], self.splits['r1train'], self.splits['r2test'], self.splits['r2train']) = \
-          CP6Split.get_splits( self )
+          DataSplit.get_splits( self )
 
     def count_labels_in_split( self, data_split ):
         label_count_map = defaultdict( int )
@@ -126,14 +127,14 @@ class CP6Data:
     def write_label_table( self ):
         with open( self.paths.label_table_path, 'w' ) as f:
             for index in range( 0, len(self.labels)):
-                f.write( '%d %s\n' % ( index, CP6Util.qstr( self.labels[index] )))
+                f.write( '%d %s\n' % ( index, Util.qstr( self.labels[index] )))
 
         sys.stderr.write( 'Info: wrote %d labels to %s\n' % \
                           (len(self.labels), self.paths.label_table_path ))
 
     def get_label_vector_str( self, data_split, id ):
         s = ''
-        if data_split.mode == CP6Split.TEST:
+        if data_split.mode == DataSplit.TEST:
             for i in range( 0, len(self.labels)):
                 if (self.labels[i] == 'structures') and (data_split.round == 1):
                     s += '-1,'
@@ -160,9 +161,9 @@ class CP6Data:
 
                 f.write( '%d ' % mir_id ) # 0
                 f.write( '%d ' % int(photo.get('id'))) # 1
-                f.write( '%s ' % CP6Util.qstr( photo.find('owner').get('nsid'))) # 2
-                f.write( '%s ' % CP6Util.qstr( photo.find('title').text )) # 3
-                f.write( '%s ' % CP6Util.qstr( photo.find('description').text )) # 4
+                f.write( '%s ' % Util.qstr( photo.find('owner').get('nsid'))) # 2
+                f.write( '%s ' % Util.qstr( photo.find('title').text )) # 3
+                f.write( '%s ' % Util.qstr( photo.find('description').text )) # 4
 
                 if (exif.valid):  # 5 6 7
                     f.write( '%s %s %s ' % (exif.exif_date, exif.exif_time, exif.exif_flash ))
@@ -171,7 +172,7 @@ class CP6Data:
 
                 locality = photo.find('locality')
                 if locality: # 8
-                    f.write( '%s ' % CP6Util.qstr( locality.text ))
+                    f.write( '%s ' % Util.qstr( locality.text ))
                 else:
                     f.write( 'none ' )
 
@@ -303,7 +304,7 @@ class CP6Data:
         CP6ImageEdge.write_edge_table( t.image_edge_table, self.get_image_edges( s ))
 
 if __name__ == '__main__':
-    p = CP6Paths()
+    p = Paths()
     d = CP6Data( p )
     d.set_splits()
 

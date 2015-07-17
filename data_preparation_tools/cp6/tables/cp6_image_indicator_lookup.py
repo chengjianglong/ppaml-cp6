@@ -34,7 +34,7 @@
 ##
 
 import sys
-from cp6.util.cp6_util import CP6Util
+from cp6.utilities.util import Util
 
 
 class CP6ImageIndicatorEntry:
@@ -117,10 +117,10 @@ class CP6ImageIndicatorLookupTable:
             f.write( '%d %d\n' % (len(self.groups), len(self.words)))
             for i in range(0, len(self.groups)):
                 ind = self.groups_index[ i ]
-                f.write( '%d %s %s\n' % (ind.id, ind.type, CP6Util.qstr( ind.s )))
+                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
             for i in range(0, len(self.words)):
                 ind = self.words_index[ i ]
-                f.write( '%d %s %s\n' % (ind.id, ind.type, CP6Util.qstr( ind.s )))
+                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
 
     def init_indicator( self, id ):
         imgind = CP6ImageIndicator( id )
