@@ -37,8 +37,9 @@ from cp6.utilities.paths import Paths
 from cp6.utilities.data_split import DataSplit
 from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
-from cp6.tables.cp6_exifdata import CP6EXIFData
+from cp6.bootstrap.cp6_exifdata import CP6EXIFData
 from cp6.tables.cp6_image_indicator_lookup import CP6ImageIndicatorLookupTable, CP6ImageIndicator
+from cp6.tables.label_table import LabelTable
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
 from cp6.tables.cp6_image_edge import CP6ImageEdge
 
@@ -64,10 +65,10 @@ class CP6Data:
 
             labelset |= self.get_mirlabel_set( mir_id )
 
-        self.labels = sorted( labelset )
+        self.label_table = LabelTable.set_from_vector( sorted( labelset ) )
         sys.stderr.write( 'Info: found %d valid, %d invalid EXIF files (sum: %d)\n' % \
                           (c_valid, c_invalid, c_valid+c_invalid))
-        sys.stderr.write( 'Info: found %d labels\n' % len(self.labels))
+        sys.stderr.write( 'Info: found %d labels\n' % self.label_table.nlabels() )
 
         self.imglut = CP6ImageIndicatorLookupTable( self.paths.node_features_path, \
                                                     self.paths.stopwords_path )
@@ -107,7 +108,7 @@ class CP6Data:
 
         with open( fn, 'w') as f:
             f.write('label,r1rain,r1test,r2train,r2test,total\n');
-            for label in self.labels:
+            for label in self.label_table.label2id:
                 f.write('%s,' % label)
                 sum = 0
                 for s in ('r1train','r1test','r2train','r2test'):
@@ -124,29 +125,21 @@ class CP6Data:
                     s.add( label.text )
         return s
 
-    def write_label_table( self ):
-        with open( self.paths.label_table_path, 'w' ) as f:
-            for index in range( 0, len(self.labels)):
-                f.write( '%d %s\n' % ( index, Util.qstr( self.labels[index] )))
-
-        sys.stderr.write( 'Info: wrote %d labels to %s\n' % \
-                          (len(self.labels), self.paths.label_table_path ))
-
     def get_label_vector_str( self, data_split, id ):
         s = ''
         if data_split.mode == DataSplit.TEST:
-            for i in range( 0, len(self.labels)):
-                if (self.labels[i] == 'structures') and (data_split.round == 1):
+            for i in self.label_table.idset:
+                if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
                     s += '-1,'
                 else:
                     s += '-2,'
         else:
             my_labels = self.get_mirlabel_set( id )
-            for i in range(0, len(self.labels)):
-                if (self.labels[i] == 'structures') and (data_split.round == 1):
+            for i in self.label_table.idset:
+                if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
                     s += '-1,'
                 else:
-                    if self.labels[i] in my_labels:
+                    if self.label_table.id2label[i] in my_labels:
                         s += '1,'
                     else:
                         s += '0,'
@@ -293,7 +286,7 @@ class CP6Data:
         return edges
 
     def write_global_tables( self ):
-        self.write_label_table()
+        self.label_table.write_to_file( self.paths.label_table_path )
         self.imglut.write_image_indicator_lookup_table( self.paths.image_indicator_lut_path )
 
     def write_phase_table( self, phase_key ):

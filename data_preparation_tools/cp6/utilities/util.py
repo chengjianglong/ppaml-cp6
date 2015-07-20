@@ -140,6 +140,7 @@ class Util:
 
     @staticmethod
     def label_census( paths, phase_key ):
+        label_table = LabelTable.read_from_file( paths.label_table_path )
         (id2label, label2id) = Util.read_label_table( paths.label_table_path )
         label_vector_count = Util.count_labels_in_image_table( paths.phase_tables[phase_key].image_table )
         for ind in label_vector_count:
