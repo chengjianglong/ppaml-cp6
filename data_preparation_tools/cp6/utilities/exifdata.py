@@ -38,7 +38,7 @@ import sys
 import re
 import datetime
 
-class CP6EXIFData:
+class EXIFData:
     def __init__( self, id, v, edate, etime, eflash ):
         self.mir_id = id
         self.valid = v
@@ -64,6 +64,12 @@ class CP6EXIFData:
         else:
             return 'exif %d: invalid' % self.mir_id
 
+    def to_table_str( self ):
+        if self.valid:
+            return '%s %s %s' % (self.exif_date, self.exif_time, self.exif_flash )
+        else:
+            return 'none none U'
+
     @staticmethod
     def parsableDatetime( dt ):
         m = re.search( '(\d{4}:\d{2}:\d{2}) (\d{2}:\d{2}:\d{2})', dt )
@@ -73,7 +79,7 @@ class CP6EXIFData:
             return (None, None)
 
     @classmethod
-    def from_file( cls, fn ):
+    def read_from_file( cls, fn ):
         m = re.search( 'exif(\d+).txt$', fn )
         if not m:
             raise AssertionError( 'Failed to parse MIR id from "%s"' % fn )
@@ -111,22 +117,22 @@ class CP6EXIFData:
                 eflash = 'Y'
 
         datetime = None
-        if ('dntOrig' in tags) and CP6EXIFData.parsableDatetime( tags['dntOrig'] ):
+        if ('dntOrig' in tags) and EXIFData.parsableDatetime( tags['dntOrig'] ):
             datetime = tags['dntOrig']
-        elif ('dntDig' in tags) and CP6EXIFData.parsableDatetime( tags['dntDig'] ):
+        elif ('dntDig' in tags) and EXIFData.parsableDatetime( tags['dntDig'] ):
             datetime = tags['dntDig']
-        elif 'dnt' in tags and CP6EXIFData.parsableDatetime( tags['dnt'] ):
+        elif 'dnt' in tags and EXIFData.parsableDatetime( tags['dnt'] ):
             datetime = tags['dnt']
         else:
             sys.stderr.write( 'WARN: unparsable date/time in %s; skipping\n' % fn )
             return cls( id, False, None, None, None )
 
-        (edate, etime) = CP6EXIFData.parsableDatetime( datetime )
+        (edate, etime) = EXIFData.parsableDatetime( datetime )
         if not (edate and etime):
             return cls( id, False, None, None, None )
 
         return cls( id, True, edate, etime, eflash )
 
 if __name__ == "__main__":
-    e = CP6EXIFData.from_file( sys.argv[1] )
+    e = EXIFData.read_from_file( sys.argv[1] )
     print e

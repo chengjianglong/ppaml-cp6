@@ -37,11 +37,12 @@ from cp6.utilities.paths import Paths
 from cp6.utilities.data_split import DataSplit
 from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
-from cp6.bootstrap.cp6_exifdata import CP6EXIFData
+from cp6.utilities.exifdata import EXIFData
 from cp6.tables.cp6_image_indicator_lookup import CP6ImageIndicatorLookupTable, CP6ImageIndicator
 from cp6.tables.label_table import LabelTable
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
 from cp6.tables.cp6_image_edge import CP6ImageEdge
+from cp6.tables.image_table import ImageTable, ImageTableEntry
 
 class CP6Data:
 
@@ -56,7 +57,7 @@ class CP6Data:
         labelset = set()
         for mir_id in self.xmldata.mir_nodes:
             exif_path = '%s/exif%d.txt' % (self.paths.exif_dir, mir_id )
-            e = CP6EXIFData.from_file( exif_path )
+            e = EXIFData.read_from_file( exif_path )
             self.exifdata[ mir_id ] = e
             if e.valid:
                 c_valid += 1
@@ -125,51 +126,52 @@ class CP6Data:
                     s.add( label.text )
         return s
 
-    def get_label_vector_str( self, data_split, id ):
-        s = ''
+    def set_label_vector_from_split( self, data_split, id ):
+        v = []
         if data_split.mode == DataSplit.TEST:
             for i in self.label_table.idset:
                 if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
-                    s += '-1,'
+                    v.append( -1 )
                 else:
-                    s += '-2,'
+                    v.append( -2 )
         else:
             my_labels = self.get_mirlabel_set( id )
             for i in self.label_table.idset:
                 if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
-                    s += '-1,'
+                    v.append( -1 )
                 else:
                     if self.label_table.id2label[i] in my_labels:
-                        s += '1,'
+                        v.append( 1 )
                     else:
-                        s += '0,'
-        return s.rstrip(',')
+                        v.append( 0 )
+        return v
 
 
-    def write_image_table( self, data_split, fn ):
-        with open( fn, 'w' ) as f:
-            for mir_id in sorted( data_split.ids ):
-                photo = self.xmldata.mir_nodes[ mir_id ]
-                exif = self.exifdata[ mir_id ]
+    def image_table_from_split( self, data_split ):
+        t = ImageTable()
+        for mir_id in data_split.ids:
+            photo = self.xmldata.mir_nodes[ mir_id ]
 
-                f.write( '%d ' % mir_id ) # 0
-                f.write( '%d ' % int(photo.get('id'))) # 1
-                f.write( '%s ' % Util.qstr( photo.find('owner').get('nsid'))) # 2
-                f.write( '%s ' % Util.qstr( photo.find('title').text )) # 3
-                f.write( '%s ' % Util.qstr( photo.find('description').text )) # 4
+            e = ImageTableEntry()
 
-                if (exif.valid):  # 5 6 7
-                    f.write( '%s %s %s ' % (exif.exif_date, exif.exif_time, exif.exif_flash ))
-                else:
-                    f.write( 'none none U ')
+            e.mir_id = mir_id
+            e.flickr_id = int( photo.get('id') )
+            e.flickr_owner = photo.find('owner').get('nsid')
+            e.flickr_title = photo.find('title').text
+            e.flickr_descr = photo.find('description').text
+            e.exif_data = self.exifdata[ mir_id ]
 
-                locality = photo.find('locality')
-                if locality: # 8
-                    f.write( '%s ' % Util.qstr( locality.text ))
-                else:
-                    f.write( 'none ' )
+            locality = photo.find('locality')
+            if locality:
+                e.flickr_locality = locality.text
+            else:
+                e.flickr_locality = None
 
-                f.write( '%s\n' % self.get_label_vector_str( data_split, mir_id ))  #9
+            e.label_vector = self.set_label_vector_from_split( data_split, mir_id )
+
+            t.add_entry( e )
+
+        return t
 
     @staticmethod
     def textwrapper( node ):
@@ -292,7 +294,8 @@ class CP6Data:
     def write_phase_table( self, phase_key ):
         s = self.splits[ phase_key ]
         t = self.paths.phase_tables[ phase_key ]
-        self.write_image_table( s, t.image_table )
+        img_table = self.image_table_from_split( s )
+        img_table.write_to_file( t.image_table )
         self.write_image_indicator_table( s, t.image_indicator_table )
         CP6ImageEdge.write_edge_table( t.image_edge_table, self.get_image_edges( s ))
 
