@@ -29,6 +29,9 @@
 # Part of the DARPA PPAML CP6 toolset; poc: roddy.collins@kitware.com
 #
 
+import sys
+import codecs
+
 from cp6.utilities.util import Util
 from cp6.utilities.exifdata import EXIFData
 
@@ -55,7 +58,7 @@ class ImageTable:
         self.entries[ e.mir_id ] = e
 
     def write_to_file( self, fn ):
-        with open( fn, 'w' ) as f:
+        with codecs.open( fn, 'w', encoding='UTF-8' ) as f:
             for mir_id in sorted( self.entries ):
                 e = self.entries[ mir_id ]
                 f.write( '%d ' % e.mir_id ) # 0
@@ -73,3 +76,40 @@ class ImageTable:
 
                 f.write( '%s\n' % ','.join(map(str, e.label_vector))) # 9
 
+    @staticmethod
+    def read_from_file( fn ):
+        c = 0
+        t = ImageTable()
+        with codecs.open( fn, 'r', encoding='utf-8' ) as f:
+            while 1:
+                raw_line = f.readline()
+                if not raw_line:
+                    break
+                c += 1
+                fields = Util.qstr_split( raw_line )
+                if len(fields) != 10:
+                    raise AssertionError( 'Image table %s:%d: found %d fields, expecting 10' % (fn, c, len(fields)))
+                e = ImageTableEntry()
+                e.mir_id = int( fields[0] )
+                e.flickr_id = int( fields[1] )
+                e.flickr_owner = fields[2] if (fields[2] != 'none') else None
+                e.flickr_title = fields[3] if (fields[3] != 'none') else None
+                e.flickr_descr = fields[4] if (fields[4] != 'none') else None
+                if (fields[5] == 'none') and \
+                   (fields[6] == 'none') and \
+                   (fields[7] == 'U'):
+                    e.exif_data = EXIFData( e.mir_id, False, 'none', 'none', 'U' )
+                else:
+                    e.exif_data = EXIFData( e.mir_id, True, fields[5], fields[6], fields[7])
+                e.flickr_locality = fields[8] if fields[8] != 'none' else None
+                e.label_vector = map(int, fields[9].split(','))
+                t.add_entry( e )
+        return t
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: $0 input-img-table output-img-table\n')
+        sys.exit(0)
+    t = ImageTable.read_from_file( sys.argv[1] )
+    sys.stderr.write('Info: image table has %d entries\n' % len(t.entries))
+    t.write_to_file( sys.argv[2] )

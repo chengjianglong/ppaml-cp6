@@ -46,7 +46,7 @@ class Util:
             return 'none'
 
         s = s.replace( '"',' ' ).replace( '\n', ' ').replace( '\r', ' ' )
-        return ( '"%s"' % s ).encode( "UTF-8" )
+        return unicode( '"%s"' % s )
 
     @staticmethod
     def qstr_split( s ):
