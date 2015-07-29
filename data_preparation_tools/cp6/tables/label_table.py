@@ -46,7 +46,6 @@ class LabelTable:
         with open( fn, 'w' ) as f:
             for index in self.idset:
                 f.write( '%d %s\n' % ( index, Util.qstr( self.id2label[index] )))
-        sys.stderr.write( 'Info: wrote %d labels to %s\n' % ( self.nlabels(), fn ))
 
     @staticmethod
     def set_from_vector( v ):
@@ -68,5 +67,13 @@ class LabelTable:
                     break
                 fields = Util.qstr_split( raw_line )
                 I2L[ int(fields[0]) ] = fields[1]
-                L2I[ fields[i] ] = int(fields[0])
+                L2I[ fields[1] ] = int(fields[0])
         return LabelTable( L2I, I2L)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: $0 input-label-table output-label-table\n')
+        sys.exit(0)
+    t = LabelTable.read_from_file( sys.argv[1] )
+    sys.stderr.write('Info: label table has %d entries\n' % len(t.idset))
+    t.write_to_file( sys.argv[2] )
