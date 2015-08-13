@@ -37,13 +37,13 @@ import sys
 from cp6.utilities.util import Util
 
 
-class CP6ImageIndicatorEntry:
+class ImageIndicatorEntry:
     def __init__( self, id, t, s ):
         self.id = id
         self.type = t  # 'G' for group, 'W' for word
         self.s = s
 
-class CP6ImageIndicator:
+class ImageIndicator:
     (IN_NONE, IN_TITLE, IN_DESC, IN_TAG, IN_COMMENT) = (0x0,0x01,0x02,0x04,0x08)
     def __init__( self, id ):
         self.id = id
@@ -55,23 +55,25 @@ class CP6ImageIndicator:
         return 'imageindicator %d: %d groups, %d words' % \
           (self.id, len(self.group_list), len(self.word_list))
 
-class CP6ImageIndicatorLookupTable:
+class ImageIndicatorLookupTable:
 
-    def __init__( self, fn, stopwords_fn ):
-        self.stopwords = dict()
+    def __init__( self ):
+        self.groups = dict()  # key: text; val: ImageIndicatorEntry
+        self.words = dict()   # key: text; val: ImageIndicatorEntry
+        self.groups_index = dict() # key: id; val: ImageIndicatorEntry
+        self.words_index = dict()  # key: id; val; ImageIndicatorEntry
+
+    def set_from_mcauley( self, fn, stopwords_fn ):
+        stopwords = dict()
         with open( stopwords_fn ) as f:
             while 1:
                 stopword = f.readline()
                 if not stopword:
                     break
                 stopword = stopword.strip()
-                self.stopwords[ stopword ] = True
+                stopwords[ stopword ] = True
         sys.stderr.write('Info: read %d stopwords\n' % len(self.stopwords))
 
-        self.groups = dict()  # key: text; val: CP6ImageIndicatorEntry
-        self.words = dict()   # key: text; val: CP6ImageIndicatorEntry
-        self.groups_index = dict() # key: id; val: CP6ImageIndicatorEntry
-        self.words_index = dict()  # key: id; val; CP6ImageIndicatorEntry
         n_stopwords_found = 0
         with open( fn ) as f:
             header_fields = f.readline().strip().split()
@@ -90,8 +92,8 @@ class CP6ImageIndicatorLookupTable:
                 if len(fields) != 2:
                     raise AssertionError( 'Found %d fields in group line "%s"; expecting 2\n' % \
                                           (len(fields), raw_line.strip()))
-                self.groups[ fields[1] ] = CP6ImageIndicatorEntry( index, 'G', fields[1] )
-                self.groups_index[ index ] = CP6ImageIndicatorEntry( index, 'G', fields[1] )
+                self.groups[ fields[1] ] = ImageIndicatorEntry( index, 'G', fields[1] )
+                self.groups_index[ index ] = ImageIndicatorEntry( index, 'G', fields[1] )
 
             index = 0
             for i in range( 0, n_tags ):
@@ -104,26 +106,16 @@ class CP6ImageIndicatorLookupTable:
                     raise AssertionError( 'Found %d fields in tag line "%s"; expecting 2\n' % \
                                           (len(fields), raw_line.strip()))
 
-                if fields[1] in self.stopwords:
+                if fields[1] in stopwords:
                     n_stopwords_found += 1
                 else:
-                    self.words[ fields[1] ] = CP6ImageIndicatorEntry( index, 'W', fields[1] )
-                    self.words_index[ index ] = CP6ImageIndicatorEntry( index, 'W', fields[1] )
+                    self.words[ fields[1] ] = ImageIndicatorEntry( index, 'W', fields[1] )
+                    self.words_index[ index ] = ImageIndicatorEntry( index, 'W', fields[1] )
                     index += 1
         sys.stderr.write('Info: Found %d stopwords reading LUT\n' % n_stopwords_found)
 
-    def write_image_indicator_lookup_table( self, fn ):
-        with open( fn, 'w' ) as f:
-            f.write( '%d %d\n' % (len(self.groups), len(self.words)))
-            for i in range(0, len(self.groups)):
-                ind = self.groups_index[ i ]
-                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
-            for i in range(0, len(self.words)):
-                ind = self.words_index[ i ]
-                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
-
     def init_indicator( self, id ):
-        imgind = CP6ImageIndicator( id )
+        imgind = ImageIndicator( id )
         imgind.group_list = dict()
         imgind.word_list = dict()
         imgind.word_source_flags = dict()
@@ -140,9 +132,48 @@ class CP6ImageIndicatorLookupTable:
                 if word in self.words:
                     index = self.words[word].id
                     if not index in imgind.word_list:
-                        imgind.word_source_flags[ index ] = CP6ImageIndicator.IN_NONE
+                        imgind.word_source_flags[ index ] = ImageIndicator.IN_NONE
                     imgind.word_list[ index ] = True
                     imgind.word_source_flags[ index ] |= source_flag
             else:
                 raise AssertionError( 'Bad indicator type %s\n' % ind_type )
+
+    def write_to_file( self, fn ):
+        with open( fn, 'w' ) as f:
+            f.write( '%d %d\n' % (len(self.groups), len(self.words)))
+            for i in range(0, len(self.groups)):
+                ind = self.groups_index[ i ]
+                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
+            for i in range(0, len(self.words)):
+                ind = self.words_index[ i ]
+                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
+
+    @staticmethod
+    def read_from_file( fn ):
+        t = ImageIndicatorLookupTable()
+        with open( fn, 'r' ) as f:
+            header_fields = Util.qstr_split( f.readline() )
+            if len(header_fields) != 2:
+                raise AssertionError( 'ImageIndicatorLookupTable "%s": header had %d fields, expected 2' % \
+                                      ( fn, len(header_fields)))
+            (n_groups, n_words) = map(int, header_fields)
+            for i in range(0, n_groups):
+                group_fields = Util.qstr_split( f.readline() )
+                if len(group_fields) != 3:
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": group %d had %d fields, expected 3' % \
+                                          (fn, i, len(group_fields)))
+                e = ImageIndicatorEntry( int(group_fields[0]), group_fields[1], group_fields[2]) )
+                t.groups_index[ e.id ] = e
+                t.groups[ e.s ] = e
+            for i in range(0, n_words):
+                word_fields = Util.qstr_split( f.readline() )
+                if len(word_fields) != 3:
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
+                                          (fn, i, len(word_fields)))
+                e = ImageIndicatorEntry( int(word_fields[0], word_fields[1], word_fields[2]) )
+                t.words_index[ e.id ] = e
+                t.words[ e.s ] = e
+
+        return t
+    
 
