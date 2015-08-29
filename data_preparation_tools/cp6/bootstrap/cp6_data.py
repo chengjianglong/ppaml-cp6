@@ -38,7 +38,7 @@ from cp6.utilities.data_split import DataSplit
 from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
 from cp6.utilities.exifdata import EXIFData
-from cp6.tables.cp6_image_indicator_lookup import CP6ImageIndicatorLookupTable, CP6ImageIndicator
+from cp6.tables.cp6_image_indicator_lookup import ImageIndicatorLookupTable, ImageIndicator
 from cp6.tables.label_table import LabelTable
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
 from cp6.tables.cp6_image_edge import CP6ImageEdge
@@ -71,8 +71,9 @@ class CP6Data:
                           (c_valid, c_invalid, c_valid+c_invalid))
         sys.stderr.write( 'Info: found %d labels\n' % self.label_table.nlabels() )
 
-        self.imglut = CP6ImageIndicatorLookupTable( self.paths.node_features_path, \
-                                                    self.paths.stopwords_path )
+        self.imglut = ImageIndicatorLookupTable()
+        self.imglut.set_from_mcauley( self.paths.node_features_path, \
+                                      self.paths.stopwords_path )
         sys.stderr.write( 'Info: Image Indicator LUT has %d groups, %d words\n' % \
                           ( len(self.imglut.groups), len(self.imglut.words) ))
 
@@ -185,24 +186,24 @@ class CP6Data:
 
         for groups in photo.iter('groups'):
             for g in groups:
-                self.imglut.add_to_indicator( imgind, 'G', g.get('id'), CP6ImageIndicator.IN_NONE )
+                self.imglut.add_to_indicator( imgind, 'G', g.get('id'), ImageIndicator.IN_NONE )
 
         self.imglut.add_to_indicator( imgind, 'W', \
                                       CP6Data.textwrapper( photo.find('title')), \
-                                      CP6ImageIndicator.IN_TITLE )
+                                      ImageIndicator.IN_TITLE )
         self.imglut.add_to_indicator( imgind, 'W', \
                                       CP6Data.textwrapper( photo.find('description')), \
-                                      CP6ImageIndicator.IN_DESC )
+                                      ImageIndicator.IN_DESC )
         for comments in photo.iter('comments'):
             for c in comments:
                 self.imglut.add_to_indicator( imgind, 'W', \
                                               CP6Data.textwrapper( c ), \
-                                              CP6ImageIndicator.IN_COMMENT )
+                                              ImageIndicator.IN_COMMENT )
         for tags in photo.iter('tags'):
             for t in tags:
                 self.imglut.add_to_indicator( imgind, 'W', \
                                               CP6Data.textwrapper( t ), \
-                                              CP6ImageIndicator.IN_TAG )
+                                              ImageIndicator.IN_TAG )
 
         return imgind
 
@@ -289,7 +290,7 @@ class CP6Data:
 
     def write_global_tables( self ):
         self.label_table.write_to_file( self.paths.label_table_path )
-        self.imglut.write_image_indicator_lookup_table( self.paths.image_indicator_lut_path )
+        self.imglut.write_to_file( self.paths.image_indicator_lut_path )
 
     def write_phase_table( self, phase_key ):
         s = self.splits[ phase_key ]

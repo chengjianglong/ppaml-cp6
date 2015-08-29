@@ -72,7 +72,7 @@ class ImageIndicatorLookupTable:
                     break
                 stopword = stopword.strip()
                 stopwords[ stopword ] = True
-        sys.stderr.write('Info: read %d stopwords\n' % len(self.stopwords))
+        sys.stderr.write('Info: read %d stopwords\n' % len(stopwords))
 
         n_stopwords_found = 0
         with open( fn ) as f:
@@ -162,7 +162,7 @@ class ImageIndicatorLookupTable:
                 if len(group_fields) != 3:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": group %d had %d fields, expected 3' % \
                                           (fn, i, len(group_fields)))
-                e = ImageIndicatorEntry( int(group_fields[0]), group_fields[1], group_fields[2]) )
+                e = ImageIndicatorEntry( int(group_fields[0]), group_fields[1], group_fields[2])
                 t.groups_index[ e.id ] = e
                 t.groups[ e.s ] = e
             for i in range(0, n_words):
@@ -170,10 +170,8 @@ class ImageIndicatorLookupTable:
                 if len(word_fields) != 3:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
                                           (fn, i, len(word_fields)))
-                e = ImageIndicatorEntry( int(word_fields[0], word_fields[1], word_fields[2]) )
+                e = ImageIndicatorEntry( int(word_fields[0]), word_fields[1], word_fields[2] )
                 t.words_index[ e.id ] = e
                 t.words[ e.s ] = e
 
         return t
-    
-

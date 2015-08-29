@@ -34,7 +34,7 @@
 ##
 
 import sys
-from cp6.tables.cp6_image_indicator_lookup import CP6ImageIndicator
+from cp6.tables.cp6_image_indicator_lookup import ImageIndicator
 
 class CP6ImageEdge:
 
@@ -57,7 +57,7 @@ class CP6ImageEdge:
             index = sharedWords[i]
             a_flag = imgIndA.word_source_flags[ index ]
             b_flag = imgIndB.word_source_flags[ index ]
-            if (a_flag == CP6ImageIndicator.IN_NONE) or (b_flag == CP6ImageIndicator.IN_NONE):
+            if (a_flag == ImageIndicator.IN_NONE) or (b_flag == ImageIndicator.IN_NONE):
                 raise AssertionError( 'Edge between %d and %d: shared word flags %d, %d\n' % \
                                       (imgIndA.id, imgIndB.id, a_flag, b_flag))
             shared_word_types[i] = a_flag + (b_flag * 16)
