@@ -35,25 +35,7 @@
 
 import sys
 from cp6.utilities.util import Util
-
-
-class ImageIndicatorEntry:
-    def __init__( self, id, t, s ):
-        self.id = id
-        self.type = t  # 'G' for group, 'W' for word
-        self.s = s
-
-class ImageIndicator:
-    (IN_NONE, IN_TITLE, IN_DESC, IN_TAG, IN_COMMENT) = (0x0,0x01,0x02,0x04,0x08)
-    def __init__( self, id ):
-        self.id = id
-        self.group_list = None
-        self.word_list = None
-        self.word_source_flags = None
-
-    def __str__( self ):
-        return 'imageindicator %d: %d groups, %d words' % \
-          (self.id, len(self.group_list), len(self.word_list))
+from cp6.utilities.image_indicator import ImageIndicator, ImageIndicatorEntry
 
 class ImageIndicatorLookupTable:
 

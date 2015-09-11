@@ -34,18 +34,7 @@ import codecs
 
 from cp6.utilities.util import Util
 from cp6.utilities.exifdata import EXIFData
-
-class ImageTableEntry:
-
-    def __init__( self ):
-        self.mir_id = None
-        self.flickr_id = None
-        self.flickr_owner = None
-        self.flickr_title = None
-        self.flickr_descr = None
-        self.exif_data = None
-        self.flickr_locality = None
-        self.label_vector = None
+from cp6.utilities.image_table_entry import ImageTableEntry
 
 class ImageTable:
 

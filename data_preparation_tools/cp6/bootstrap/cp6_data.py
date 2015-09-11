@@ -38,11 +38,14 @@ from cp6.utilities.data_split import DataSplit
 from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
 from cp6.utilities.exifdata import EXIFData
-from cp6.tables.image_indicator_lookup_table import ImageIndicatorLookupTable, ImageIndicator
+from cp6.utilities.image_indicator import ImageIndicator
+from cp6.tables.image_indicator_lookup_table import ImageIndicatorLookupTable
 from cp6.tables.label_table import LabelTable
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
-from cp6.tables.cp6_image_edge import CP6ImageEdge
-from cp6.tables.image_table import ImageTable, ImageTableEntry
+from cp6.utilities.image_edge import ImageEdge
+from cp6.utilities.image_table_entry import ImageTableEntry
+from cp6.tables.image_table import ImageTable
+from cp6.tables.edge_table import EdgeTable
 
 class CP6Data:
 
@@ -251,11 +254,11 @@ class CP6Data:
                     (loc_flag, user_flag, friend_flag) = ('.','.','.')
 
                 group_id_vector = \
-                  CP6ImageEdge.get_shared_group_id_vector( self.image_indicators[ a ], \
-                                                           self.image_indicators[ b ] )
+                  ImageEdge.get_shared_group_id_vector( self.image_indicators[ a ], \
+                                                        self.image_indicators[ b ] )
                 word_id_vector = \
-                  CP6ImageEdge.get_shared_word_id_vector( self.image_indicators[ a ], \
-                                                          self.image_indicators[ b ] )
+                  ImageEdge.get_shared_word_id_vector( self.image_indicators[ a ], \
+                                                       self.image_indicators[ b ] )
                 edge_is_present = mcauley_flags_nonzero or len(group_id_vector) or len(word_id_vector)
 
                 if edge_is_present:
@@ -275,14 +278,14 @@ class CP6Data:
                     n_found_edges += 1
                     if (len(group_id_vector)==0) and (len(word_id_vector)==0):
                         n_empty_group_word += 1
-                    edges.append( CP6ImageEdge.from_data( \
-                                                self.image_indicators[ a ], \
-                                                self.image_indicators[ b ], \
-                                                group_id_vector, \
-                                                word_id_vector, \
-                                                user_flag, \
-                                                loc_flag, \
-                                                friend_flag ))
+                    edges.append( ImageEdge.from_data( \
+                                            self.image_indicators[ a ], \
+                                            self.image_indicators[ b ], \
+                                            group_id_vector, \
+                                            word_id_vector, \
+                                            user_flag, \
+                                            loc_flag, \
+                                            friend_flag ))
 
         sys.stderr.write('Info: Found %d of %d possible edges\n' % (n_found_edges, n_possible_edges))
         sys.stderr.write('Info: Found %d missed McAuley user flags; %d edges with no words or groups\n' % (n_mcauley_missed_user_flag, n_empty_group_word))
@@ -292,13 +295,14 @@ class CP6Data:
         self.label_table.write_to_file( self.paths.label_table_path )
         self.imglut.write_to_file( self.paths.image_indicator_lut_path )
 
-    def write_phase_table( self, phase_key ):
+    def write_phase_tables( self, phase_key ):
         s = self.splits[ phase_key ]
         t = self.paths.phase_tables[ phase_key ]
         img_table = self.image_table_from_split( s )
         img_table.write_to_file( t.image_table )
         self.write_image_indicator_table( s, t.image_indicator_table )
-        CP6ImageEdge.write_edge_table( t.image_edge_table, self.get_image_edges( s ))
+        edge_table = EdgeTable( self.get_image_edges( s ) )
+        edge_table.write_to_file( t.image_edge_table )
 
 if __name__ == '__main__':
     p = Paths()
@@ -308,7 +312,7 @@ if __name__ == '__main__':
     d.write_debug_label_count_csv( 'labelcount.csv' )
     d.write_global_tables()
 
-    d.write_phase_table( 'r1train' )
-    # d.write_phase_table( 'r1test' )
-    # d.write_phase_table( 'r2train' )
-    # d.write_phase_table( 'r2test' )
+#    d.write_phase_tables( 'r1train' )
+    d.write_phase_tables( 'r1test' )
+    # d.write_phase_tables( 'r2train' )
+    # d.write_phase_tables( 'r2test' )
