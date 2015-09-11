@@ -175,3 +175,12 @@ class ImageIndicatorLookupTable:
                 t.words[ e.s ] = e
 
         return t
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: $0 input-img-indicator-table output-img-indicator-table\n')
+        sys.exit(0)
+    t = ImageIndicatorTable.read_from_file( sys.argv[1] )
+    sys.stderr.write('Info: image indicator table has %d grops and %d words\n' \
+                     % (len(t.groups), len(t.words)))
+    t.write_to_file( sys.argv[2] )
