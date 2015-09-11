@@ -29,6 +29,11 @@
 # Part of the DARPA PPAML CP6 toolset; poc: roddy.collins@kitware.com
 #
 
+#
+# This class is used only when bootstrapping the PPAML tables from the
+# source XML.
+#
+
 import sys
 import codecs
 import xml.etree.ElementTree as ET
