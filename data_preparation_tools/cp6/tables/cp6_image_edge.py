@@ -34,7 +34,7 @@
 ##
 
 import sys
-from cp6.tables.cp6_image_indicator_lookup import ImageIndicator
+from cp6.tables.image_indicator_lookup_table import ImageIndicator
 
 class CP6ImageEdge:
 

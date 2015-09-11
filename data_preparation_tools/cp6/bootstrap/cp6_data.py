@@ -38,7 +38,7 @@ from cp6.utilities.data_split import DataSplit
 from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
 from cp6.utilities.exifdata import EXIFData
-from cp6.tables.cp6_image_indicator_lookup import ImageIndicatorLookupTable, ImageIndicator
+from cp6.tables.image_indicator_lookup_table import ImageIndicatorLookupTable, ImageIndicator
 from cp6.tables.label_table import LabelTable
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
 from cp6.tables.cp6_image_edge import CP6ImageEdge
