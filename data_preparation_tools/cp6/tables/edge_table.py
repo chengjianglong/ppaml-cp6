@@ -50,9 +50,8 @@ class EdgeTable:
                                          ImageEdge.canonical_flag( e.shared_contact_flag )))
 
     @staticmethod
-    def read_from_file( fn ):
-        edges = dict()
-        node_ids = dict()
+    def read_from_file( fn, id_dict_to_keep=None ):
+        edges = list()
         c_line = 0
         with open(fn) as f:
             while 1:
@@ -65,16 +64,19 @@ class EdgeTable:
                     raise AssertionError( '%s line %d: expected 10 fields, got %d' % \
                                           (fn, c_line, len(fields) ))
                 (image_A_id, image_B_id) = (int(fields[0]), int(fields[1]))
-                if (len(nodes_to_keep)==0) or \
-                   ( (image_A_id in nodes_to_keep) and (image_B_id in nodes_to_keep)):
+                if (id_dict_to_keep is None) or ( (image_A_id in id_dict_to_keep) and (image_B_id in id_dict_to_keep)):
                     # n_groups = fields[2], n_words = fields[3]
                     sharedGroups = map( int, fields[4].split(',')) if fields[4] != 'none' else list()
                     sharedWords = map( int, fields[5].split(',')) if fields[5] != 'none' else list()
                     sharedWordTypes = map( int, fields[6].split(',')) if fields[6] != 'none' else list()
                     edges.append( ImageEdge( image_A_id, image_B_id, \
-                                  sharedGroups, sharedWords, sharedWordTypes, \
-                                  fields[7], fields[8], fields[9] ))
-                    node_ids[ image_A_id ] = True
-                    node_ids[ image_B_id ] = True
+                                             sharedGroups, sharedWords, sharedWordTypes, \
+                                             fields[7], fields[8], fields[9] ))
         return EdgeTable( edges )
 
+    def copy_closed_over_ids( self, ids ):
+        new_edges = list()
+        for e in self.edges:
+            if (e.image_A_id in ids) and (e.image_B_id in ids):
+                new_edges.append( e )
+        return EdgeTable( new_edges )

@@ -66,7 +66,7 @@ class ImageTable:
                 f.write( '%s\n' % ','.join(map(str, e.label_vector))) # 9
 
     @staticmethod
-    def read_from_file( fn ):
+    def read_from_file( fn, id_dict_to_keep=None ):
         c = 0
         t = ImageTable()
         with codecs.open( fn, 'r', encoding='utf-8' ) as f:
@@ -78,8 +78,11 @@ class ImageTable:
                 fields = Util.qstr_split( raw_line )
                 if len(fields) != 10:
                     raise AssertionError( 'Image table %s:%d: found %d fields, expecting 10' % (fn, c, len(fields)))
+                id = int( fields[0] )
+                if not ( (id_dict_to_keep is None) or (id in id_dict_to_keep) ):
+                    next
                 e = ImageTableEntry()
-                e.mir_id = int( fields[0] )
+                e.mir_id = int( id )
                 e.flickr_id = int( fields[1] )
                 e.flickr_owner = fields[2] if (fields[2] != 'none') else None
                 e.flickr_title = fields[3] if (fields[3] != 'none') else None
@@ -94,6 +97,18 @@ class ImageTable:
                 e.label_vector = map(int, fields[9].split(','))
                 t.add_entry( e )
         return t
+
+    def copy_selected_ids( self, id_list, testing_mode_flag ):
+        t = ImageTable()
+        for id in id_list:
+            e = self.entries[ id ]
+            if testing_mode_flag:
+                for i in range(0, len(e.label_vector)):
+                    if e.label_vector[i] != -1:
+                        e.label_vector[i] = -2
+            t.add_entry( e )
+        return t
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
