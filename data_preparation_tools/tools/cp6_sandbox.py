@@ -42,46 +42,38 @@ from cp6.tables.edge_table import EdgeTable
 from cp6.tables.image_table import ImageTable
 
 #
-# Given a fully populated set of files, we take a set of IDs:
-# {A|B|C} id
-# A ids go into training. B ids go into testing. C ids are the eval_in.
+# Given a fully populated set of source files, we take a set of IDs:
+# {A|B} id
+# A ids go into training. B ids go into testing.
 #
-# Ids may be duplicated between A/B/C.
+# Ids may be duplicated between A/B.
 #
-# Each of A, B, and C require a closed set of edges.
+# Each of A and B require a closed set of edges.
 #
-# etc/
-#   label_table
-#   image_indicator_lookup_table
-#   caffe_descriptor_table
+# .
+# +-- eval_in
+# |   +-- etc
+# |   |   +-- caffe_dictionary.txt
+# |   |   +-- image_indicator_lookup_table.txt
+# |   |   +-- label_table.txt
+# |   +-- testing
+# |       +-- image_table.txt
+# +-- eval_out
+# +-- run_in
+# |   +-- testing
+# |   |   +-- caffe_histograms.txt
+# |   |   +-- image_edge_table.txt
+# |   |   +-- image_indicator_table.txt
+# |   |   +-- image_table.txt
+# |   |   +-- image_feature_group
+# |   +-- training
+# |       +-- caffe_histograms.txt
+# |       +-- image_edge_table.txt
+# |       +-- image_indicator_table.txt
+# |       +-- image_table.txt
+# |       +-- image_feature_group
+# +-- run_out
 #
-# run_in/
-#   input/
-#     training/  (all over just A ids )
-#        image_table [training mode ]
-#        image_feature_table
-#        image_detector_table
-#        image_indicator_table
-#        image_csift_table
-#        edge_table
-#     testing/  (over all just B ids )
-#        image_table [testing mode ]
-#        image_feature_table
-#        image_detector_table
-#        image_indicator_table
-#        image_csift_table
-#        edge_table
-#
-#  eval_in/ (over all just C ids)
-#     image_table [testing mode ]
-#     image_feature_table
-#     image_detector_table
-#     image_indicator_table
-#     image_csift_table
-#     edge_table
-#
-
-
 
 class SandboxPaths:
     def __init__( self, src_dir, target_dir ):
@@ -89,16 +81,21 @@ class SandboxPaths:
             raise AssertionError( '%s exists; please remove and re-run' % target_dir )
         self.dirs = dict()
         self.dirs[ 'root' ] = target_dir
-        self.dirs[ 'etc' ] = os.path.join( target_dir, 'etc' )
-        self.dirs[ 'run_in' ] = os.path.join( target_dir, 'run_in' )
-        self.dirs[ 'input' ] = os.path.join( target_dir, 'run_in' )
-        self.dirs[ 'training' ] = os.path.join( self.dirs[ 'input' ], 'training' )
-        self.dirs[ 'testing' ] = os.path.join( self.dirs[ 'input' ], 'testing' )
-        self.dirs[ 'test' ] = os.path.join( self.dirs[ 'run_in' ], 'test' )
+
         self.dirs[ 'eval_in' ] = os.path.join( target_dir, 'eval_in' )
+        self.dirs[ 'etc' ] = os.path.join( self.dirs['eval_in'], 'etc' )
+        self.dirs[ 'eval_testing' ] = os.path.join( self.dirs['eval_in'], 'testing' )
+
+        self.dirs[ 'eval_out' ] = os.path.join( target_dir, 'eval_out' )
+
+        self.dirs[ 'run_in' ] = os.path.join( target_dir, 'run_in' )
+        self.dirs[ 'run_testing' ] = os.path.join( self.dirs['run_in'], 'testing' )
+        self.dirs[ 'run_training' ] = os.path.join( self.dirs['run_in'], 'training' )
+
+        self.dirs[ 'run_out' ] = os.path.join( target_dir, 'run_out' )
 
         # order matters
-        for d in ['root', 'etc', 'run_in', 'training', 'testing', 'test', 'eval_in' ]:
+        for d in ['root', 'eval_in', 'etc', 'eval_testing', 'eval_out', 'run_in', 'run_testing', 'run_training', 'run_out'  ]:
             os.mkdir( self.dirs[d] )
 
         self.src_dir = src_dir
@@ -114,12 +111,17 @@ class SandboxPaths:
             sys.stderr.write('Info: copied %s\n' % i)
 
     def downsample_edge_file( self, dst_dir_tag, ids ):
-        e_sampled = self.edge_table.copy_closed_over_ids( ids )
-        e_sampled.write_to_file( os.path.join( self.dirs[ dst_dir_tag ], 'image_edge_table.txt' ))
+        fn = os.path.join( self.dirs[ dst_dir_tag ], 'image_edge_table.txt' )
+        sys.stderr.write( 'Info: writing %s\n' % fn )
+        (c_total, c_written) = self.edge_table.write_to_file( fn, ids )
+        sys.stderr.write( 'Info: wrote %d of %d edges to %s\n' % (c_written, c_total, fn ))
 
     def downsample_image_file( self, dst_dir_tag, ids, testing_mode_flag ):
-        i_sampled = self.image_table.copy_selected_ids( ids, testing_mode_flag )
-        i_sampled.write_to_file( os.path.join( self.dirs[ dst_dir_tag ], 'image_table.txt' ))
+        filter_package = (ids, testing_mode_flag )
+        fn = os.path.join( self.dirs[ dst_dir_tag ], 'image_table.txt' )
+        sys.stderr.write( 'Info: writing %s\n' % fn )
+        (c_total, c_written) = self.image_table.write_to_file( fn, filter_package )
+        sys.stderr.write( 'Info: wrote %d of %d edges to %s\n' % (c_written, c_total, fn ))
 
     def downsample_id_files( self, dst_dir_tag, ids ):
         gsrc =  os.path.join( self.src_dir, 'id-based', '*.txt')
@@ -158,44 +160,44 @@ class SandboxPaths:
 
     def cache_edge_table( self ):
         edge_src_fn = os.path.join( self.src_dir, 'edge', 'image_edge_table.txt' )
-        sys.stderr.write( 'Info: loading edge table %s, filtering to %d edges\n' % (edge_src_fn, len(self.all_ids)) )
+        sys.stderr.write( 'Info: loading edge table %s, filtering to edges with %d nodes\n' % (edge_src_fn, len(self.all_ids)) )
         self.edge_table = EdgeTable.read_from_file( edge_src_fn, self.all_ids )
-        sys.stderr.write( 'Info: loaded\n')
+        sys.stderr.write( 'Info: loaded %d edges\n' % len(self.edge_table.edges) )
 
-    def cache_image_table( self ):
-        img_src_fn = os.path.join( self.src_dir, 'image', 'image_table.txt' )
+    def cache_image_table( self, round ):
+        img_src_fn = os.path.join( self.src_dir, 'image', 'image_table_round_%d.txt' % round )
         sys.stderr.write( 'Info: loading image table %s, filtering to %d images\n' % (img_src_fn, len(self.all_ids)) )
         self.image_table = ImageTable.read_from_file( img_src_fn, self.all_ids )
-        sys.stderr.write( 'Info: loaded\n')
+        sys.stderr.write( 'Info: loaded %d images\n' % len(self.image_table.entries) )
 
 #
 #
 #
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        sys.stderr.write( 'Usage: $0 src-dir dst-dir id-file\n' )
+    if len(sys.argv) != 5:
+        sys.stderr.write( 'Usage: $0 round src-dir dst-dir id-file\n' )
         sys.exit(0)
-    p = SandboxPaths( sys.argv[1], sys.argv[2] )
-    p.load_id_files( sys.argv[3] )
+    cp6_round = int( sys.argv[1] )
+    p = SandboxPaths( sys.argv[2], sys.argv[3] )
+    p.load_id_files( sys.argv[4] )
     p.cache_edge_table()
-    p.cache_image_table()
+    p.cache_image_table( cp6_round )
 
     p.populate_etc()
 
+    # answer key
+    p.downsample_image_file( 'eval_testing', p.id_tables[ 'B' ], False )
+
     # run_in/training
-    p.downsample_edge_file( 'training', p.id_tables[ 'A' ])
-    p.downsample_image_file( 'training', p.id_tables[ 'A' ], False )
-    p.downsample_id_files( 'training', p.id_tables[ 'A' ])
+    p.downsample_image_file( 'run_training', p.id_tables[ 'A' ], False )
+    p.downsample_edge_file( 'run_training', p.id_tables[ 'A' ])
+    p.downsample_id_files( 'run_training', p.id_tables[ 'A' ])
 
     # run_in/testing
-    p.downsample_edge_file( 'testing', p.id_tables[ 'B' ])
-    p.downsample_image_file( 'testing', p.id_tables[ 'B' ], True )
-    p.downsample_id_files( 'testing', p.id_tables[ 'B' ])
+    p.downsample_image_file( 'run_testing', p.id_tables[ 'B' ], True )
+    p.downsample_edge_file( 'run_testing', p.id_tables[ 'B' ])
+    p.downsample_id_files( 'run_testing', p.id_tables[ 'B' ])
 
-    # test
-    p.downsample_edge_file( 'test', p.id_tables[ 'C' ])
-    p.downsample_image_file( 'test', p.id_tables[ 'C' ], True )
-    p.downsample_id_files( 'test', p.id_tables[ 'C' ])
 
 

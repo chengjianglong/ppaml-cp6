@@ -30,6 +30,7 @@
 #
 
 import sys
+import copy
 from cp6.utilities.image_edge import ImageEdge
 
 class EdgeTable:
@@ -37,9 +38,16 @@ class EdgeTable:
     def __init__( self, e ):
         self.edges = e
 
-    def write_to_file( self, fn ):
+    def write_to_file( self, fn, ids_to_keep = None ):
+        (c_total, c_written) = (0,0)
         with open(fn, 'w') as f:
             for e in self.edges:
+                c_total += 1
+                write_this_edge = (ids_to_keep is None) or \
+                                  ((e.image_A_id in ids_to_keep) and (e.image_B_id in ids_to_keep))
+                if not write_this_edge:
+                    continue
+                c_written += 1
                 f.write( '%d %d %d %d ' % (e.image_A_id, e.image_B_id, len(e.shared_groups), len(e.shared_words)))
                 group_str = ','.join(map(str,e.shared_groups)) if len(e.shared_groups) else 'none'
                 word_str = ','.join(map(str,e.shared_words)) if len(e.shared_words) else 'none'
@@ -48,6 +56,7 @@ class EdgeTable:
                 f.write( '%s %s %s\n' % (ImageEdge.canonical_flag( e.same_user_flag ), \
                                          ImageEdge.canonical_flag( e.same_location_flag ), \
                                          ImageEdge.canonical_flag( e.shared_contact_flag )))
+        return (c_total, c_written)
 
     @staticmethod
     def read_from_file( fn, id_dict_to_keep=None ):
@@ -73,10 +82,3 @@ class EdgeTable:
                                              sharedGroups, sharedWords, sharedWordTypes, \
                                              fields[7], fields[8], fields[9] ))
         return EdgeTable( edges )
-
-    def copy_closed_over_ids( self, ids ):
-        new_edges = list()
-        for e in self.edges:
-            if (e.image_A_id in ids) and (e.image_B_id in ids):
-                new_edges.append( e )
-        return EdgeTable( new_edges )

@@ -80,15 +80,16 @@ class CP6Data:
         sys.stderr.write( 'Info: Image Indicator LUT has %d groups, %d words\n' % \
                           ( len(self.imglut.groups), len(self.imglut.words) ))
 
-        self.image_indicators = dict()
+        self.image_indicator_table = ImageIndicatorTable()
         (c_iit_groups, c_iit_words, n) = (0,0,0)
         for mir_id in self.xmldata.mir_nodes:
             n += 1
             if n % 1000 == 0:
                 sys.stderr.write( 'Info: image indicator %d of %d...\n' % (n, self.n_mir_ids ))
-            self.image_indicators[ mir_id ] = self.get_image_indicator( mir_id )
-            c_iit_groups += len( self.image_indicators[ mir_id ].group_list )
-            c_iit_words += len( self.image_indicators[ mir_id ].word_list )
+            ii = self.get_image_indicator( mir_id )
+            self.image_indicator_table.image_indicators[ mir_id ] = ii
+            c_iit_groups += len( ii.group_list )
+            c_iit_words += len( ii.word_list )
         sys.stderr.write( 'Info: Image Indicators average %.2f groups, %.2f words\n' % \
                            ( c_iit_groups * 1.0 / self.n_mir_ids, c_iit_words * 1.0 / self.n_mir_ids ))
 
@@ -210,14 +211,6 @@ class CP6Data:
 
         return imgind
 
-    def write_image_indicator_table( self, data_split, fn ):
-        with open( fn, 'w' ) as f:
-            for mir_id in sorted( data_split.ids ):
-                imgind = self.image_indicators[ mir_id ]
-                group_str = ','.join(map(str,imgind.group_list.keys())) if (len(imgind.group_list)) else 'none'
-                word_str = ','.join(map(str,imgind.word_list.keys())) if (len(imgind.word_list)) else 'none'
-                f.write( '%d %s %s\n' % ( mir_id, group_str, word_str ))
-
     def get_image_edges( self, data_split ):
         #
         # An edge has two sources: McAuley's edge table, which contains
@@ -300,7 +293,7 @@ class CP6Data:
         t = self.paths.phase_tables[ phase_key ]
         img_table = self.image_table_from_split( s )
         img_table.write_to_file( t.image_table )
-        self.write_image_indicator_table( s, t.image_indicator_table )
+        self.image_indicator_table.write_to_file( t.image_indicator_table, s )
         edge_table = EdgeTable( self.get_image_edges( s ) )
         edge_table.write_to_file( t.image_edge_table )
 

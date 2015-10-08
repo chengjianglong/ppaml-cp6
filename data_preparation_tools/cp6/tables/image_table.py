@@ -31,6 +31,7 @@
 
 import sys
 import codecs
+import copy
 
 from cp6.utilities.util import Util
 from cp6.utilities.exifdata import EXIFData
@@ -46,10 +47,22 @@ class ImageTable:
             raise AssertionError( 'Double-add of %d in image table' % e.mir_id )
         self.entries[ e.mir_id ] = e
 
-    def write_to_file( self, fn ):
+    def write_to_file( self, fn, filter_package = None ):
+        write_label_vector_as_testing = False
+        if filter_package is not None:
+            write_label_vector_as_testing = filter_package[1]
+
+        (c_total, c_written) = (0,0)
         with codecs.open( fn, 'w', encoding='UTF-8' ) as f:
             for mir_id in sorted( self.entries ):
                 e = self.entries[ mir_id ]
+                c_total += 1
+                write_this_edge = (filter_package is None) or \
+                                  (e.mir_id in filter_package[0])
+                if not write_this_edge:
+                    continue
+
+                c_written += 1
                 f.write( '%d ' % e.mir_id ) # 0
                 f.write( '%d ' % e.flickr_id ) # 1
                 f.write( '%s ' % Util.qstr( e.flickr_owner )) # 2
@@ -63,7 +76,14 @@ class ImageTable:
                 else:
                     f.write( 'none ' )
 
-                f.write( '%s\n' % ','.join(map(str, e.label_vector))) # 9
+                v = copy.copy( e.label_vector )
+                if write_label_vector_as_testing:
+                    # set all non -1 values to -2
+                    for i in range(0, len(v)):
+                        if v[i] != -1:
+                            v[i] = -2
+                f.write( '%s\n' % ','.join(map(str, v))) # 9
+        return (c_total, c_written)
 
     @staticmethod
     def read_from_file( fn, id_dict_to_keep=None ):
@@ -80,7 +100,7 @@ class ImageTable:
                     raise AssertionError( 'Image table %s:%d: found %d fields, expecting 10' % (fn, c, len(fields)))
                 id = int( fields[0] )
                 if not ( (id_dict_to_keep is None) or (id in id_dict_to_keep) ):
-                    next
+                    continue
                 e = ImageTableEntry()
                 e.mir_id = int( id )
                 e.flickr_id = int( fields[1] )
@@ -96,17 +116,6 @@ class ImageTable:
                 e.flickr_locality = fields[8] if fields[8] != 'none' else None
                 e.label_vector = map(int, fields[9].split(','))
                 t.add_entry( e )
-        return t
-
-    def copy_selected_ids( self, id_list, testing_mode_flag ):
-        t = ImageTable()
-        for id in id_list:
-            e = self.entries[ id ]
-            if testing_mode_flag:
-                for i in range(0, len(e.label_vector)):
-                    if e.label_vector[i] != -1:
-                        e.label_vector[i] = -2
-            t.add_entry( e )
         return t
 
 
