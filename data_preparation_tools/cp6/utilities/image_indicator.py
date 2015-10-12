@@ -31,20 +31,30 @@
 
 
 class ImageIndicator:
+    #
+    # Every image (via ID) gets one of these. It indicates the "relevant"
+    # groups, words, and word-sources for the social media context of
+    # the image. "Relevant" is defined by whether or not the (group, word)
+    # appears in the IILUT.
+    #
+    # group_list, word_list, and word_source_flags are populated by
+    # IILUT.add_to_indicator().
+    #
+    # group_list: key: IILUT id in group_table; value: 'True'
+    #
+    # word_list: key: IILUT id in word_table; value: 'True'
+    #
+    # word_source_flags: key: IILUT id in word_table; value: bitwise-OR of source flags
+    #
+
     (IN_NONE, IN_TITLE, IN_DESC, IN_TAG, IN_COMMENT) = (0x0,0x01,0x02,0x04,0x08)
     def __init__( self, id ):
         self.id = id
-        self.group_list = None
-        self.word_list = None
-        self.word_source_flags = None
+        self.group_list = dict()
+        self.word_list = dict()
+        self.word_source_flags = dict()
 
     def __str__( self ):
         return 'imageindicator %d: %d groups, %d words' % \
           (self.id, len(self.group_list), len(self.word_list))
-
-class ImageIndicatorEntry:
-    def __init__( self, id, t, s ):
-        self.id = id
-        self.type = t  # 'G' for group, 'W' for word
-        self.s = s
 

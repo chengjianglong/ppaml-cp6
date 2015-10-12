@@ -185,7 +185,14 @@ class CP6Data:
         return node.text
 
     def get_image_indicator( self, id ):
-        imgind = self.imglut.init_indicator( id )
+        #
+        # At this point, the IILUT is populated and ready to respond
+        # to per-image descriptions, titles, comments, etc.
+        #
+        # Every image (via ID) gets an image indicator entry.
+        #
+
+        imgind = ImageIndicator( id )
         photo = self.xmldata.mir_nodes[ id ]
 
         for groups in photo.iter('groups'):
