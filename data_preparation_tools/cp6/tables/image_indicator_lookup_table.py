@@ -125,10 +125,12 @@ class ImageIndicatorLookupTable:
             f.write( '%d %d\n' % (len(self.groups), len(self.words)))
             for i in range(0, len(self.groups)):
                 ind = self.groups_index[ i ]
-                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
+                f.write( '%d %s %s %d\n' \
+                         % (ind.id, ind.type, Util.qstr( ind.s ), ImageIndicator.IN_NONE ))
             for i in range(0, len(self.words)):
                 ind = self.words_index[ i ]
-                f.write( '%d %s %s\n' % (ind.id, ind.type, Util.qstr( ind.s )))
+                f.write( '%d %s %s %d\n' \
+                         % (ind.id, ind.type, Util.qstr( ind.s ), self.word_source_flags[ ind.id ]))
 
     @staticmethod
     def read_from_file( fn ):
@@ -141,20 +143,21 @@ class ImageIndicatorLookupTable:
             (n_groups, n_words) = map(int, header_fields)
             for i in range(0, n_groups):
                 group_fields = Util.qstr_split( f.readline() )
-                if len(group_fields) != 3:
-                    raise AssertionError( 'ImageIndicatorLookupTable "%s": group %d had %d fields, expected 3' % \
+                if len(group_fields) != 4:
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": group %d had %d fields, expected 4' % \
                                           (fn, i, len(group_fields)))
                 e = ImageIndicatorEntry( int(group_fields[0]), group_fields[1], group_fields[2])
                 t.groups_index[ e.id ] = e
                 t.groups[ e.s ] = e
             for i in range(0, n_words):
                 word_fields = Util.qstr_split( f.readline() )
-                if len(word_fields) != 3:
-                    raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
+                if len(word_fields) != 4:
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 4' % \
                                           (fn, i, len(word_fields)))
                 e = ImageIndicatorEntry( int(word_fields[0]), word_fields[1], word_fields[2] )
                 t.words_index[ e.id ] = e
                 t.words[ e.s ] = e
+
 
         return t
 
