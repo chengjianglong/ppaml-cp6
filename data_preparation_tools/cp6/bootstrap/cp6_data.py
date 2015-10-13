@@ -39,6 +39,7 @@ from cp6.utilities.util import Util
 from cp6.bootstrap.cp6_xml import CP6XML
 from cp6.utilities.exifdata import EXIFData
 from cp6.utilities.image_indicator import ImageIndicator
+from cp6.tables.image_indicator_table import ImageIndicatorTable
 from cp6.tables.image_indicator_lookup_table import ImageIndicatorLookupTable
 from cp6.tables.label_table import LabelTable
 from cp6.bootstrap.cp6_mcauley_edge_features import CP6McAuleyEdgeFeatures
@@ -78,7 +79,7 @@ class CP6Data:
         self.imglut.set_from_mcauley( self.paths.node_features_path, \
                                       self.paths.stopwords_path )
         sys.stderr.write( 'Info: Image Indicator LUT has %d groups, %d words\n' % \
-                          ( len(self.imglut.groups), len(self.imglut.words) ))
+                          ( len(self.imglut.group_text_lut), len(self.imglut.word_text_lut )))
 
         self.image_indicator_table = ImageIndicatorTable()
         (c_iit_groups, c_iit_words, n) = (0,0,0)
@@ -191,6 +192,8 @@ class CP6Data:
         #
         # Every image (via ID) gets an image indicator entry.
         #
+        # This routine creates and populates the image indicator for
+        # the given image ID.
 
         imgind = ImageIndicator( id )
         photo = self.xmldata.mir_nodes[ id ]
@@ -254,11 +257,11 @@ class CP6Data:
                     (loc_flag, user_flag, friend_flag) = ('.','.','.')
 
                 group_id_vector = \
-                  ImageEdge.get_shared_group_id_vector( self.image_indicators[ a ], \
-                                                        self.image_indicators[ b ] )
+                  ImageEdge.get_shared_group_id_vector( self.image_indicator_table.image_indicators[ a ], \
+                                                        self.image_indicator_table.image_indicators[ b ] )
                 word_id_vector = \
-                  ImageEdge.get_shared_word_id_vector( self.image_indicators[ a ], \
-                                                       self.image_indicators[ b ] )
+                  ImageEdge.get_shared_word_id_vector( self.image_indicator_table.image_indicators[ a ], \
+                                                       self.image_indicator_table.image_indicators[ b ] )
                 edge_is_present = mcauley_flags_nonzero or len(group_id_vector) or len(word_id_vector)
 
                 if edge_is_present:
@@ -279,8 +282,8 @@ class CP6Data:
                     if (len(group_id_vector)==0) and (len(word_id_vector)==0):
                         n_empty_group_word += 1
                     edges.append( ImageEdge.from_data( \
-                                            self.image_indicators[ a ], \
-                                            self.image_indicators[ b ], \
+                                            self.image_indicator_table.image_indicators[ a ], \
+                                            self.image_indicator_table.image_indicators[ b ], \
                                             group_id_vector, \
                                             word_id_vector, \
                                             user_flag, \
@@ -300,7 +303,7 @@ class CP6Data:
         t = self.paths.phase_tables[ phase_key ]
         img_table = self.image_table_from_split( s )
         img_table.write_to_file( t.image_table )
-        self.image_indicator_table.write_to_file( t.image_indicator_table, s )
+        self.image_indicator_table.write_to_file( t.image_indicator_table, s.ids )
         edge_table = EdgeTable( self.get_image_edges( s ) )
         edge_table.write_to_file( t.image_edge_table )
 
