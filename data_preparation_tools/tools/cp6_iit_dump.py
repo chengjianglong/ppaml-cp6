@@ -56,14 +56,18 @@ if img_id not in iit.image_indicators:
 ii = iit.image_indicators[ img_id ]
 (ngroups, nwords) = (len(ii.group_list), len(ii.word_list))
 i = 1
-for lut_id in map(int, ii.group_list.keys()):
+for lut_id in sorted([int(x) for x in ii.group_list.keys()]):
     val = iilut.rev_lookup( 'G', lut_id )
     val = 'none' if not val else val
     sys.stdout.write('Group %d/%d: key %d, val %s\n' % (i, ngroups, lut_id, val ))
     i += 1
 i = 1
-for lut_id in map(int, ii.word_list.keys()):
+for lut_id in sorted([int(x) for x in ii.word_list.keys()]):
     val = iilut.rev_lookup( 'W', lut_id )
-    val = 'none' if not val else val
-    sys.stdout.write('Word  %d/%d: key %d, val %s\n' % (i, nwords, lut_id, val ))
+    if not val:
+        (val_str, flags_str) = ('none', 'none')
+    else:
+        val_str = val
+        flags_str = ImageIndicator.flag2str( ii.word_source_flags[ lut_id ])
+    sys.stdout.write('Word  %d/%d: key %d, val %s, flags: %s\n' % (i, nwords, lut_id, val_str, flags_str ))
     i += 1

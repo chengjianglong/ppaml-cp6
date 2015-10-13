@@ -54,6 +54,21 @@ class ImageIndicator:
         self.word_list = dict()
         self.word_source_flags = dict()
 
+    @staticmethod
+    def flag2str( flag ):
+        s = []
+        if flag & ImageIndicator.IN_NONE:
+            s.append("none")
+        if flag & ImageIndicator.IN_TITLE:
+            s.append("title")
+        if flag & ImageIndicator.IN_DESC:
+            s.append("description")
+        if flag & ImageIndicator.IN_TAG:
+            s.append("tag")
+        if flag & ImageIndicator.IN_COMMENT:
+            s.append("comment")
+        return ",".join( s )
+
     def __str__( self ):
         return 'imageindicator %d: %d groups, %d words' % \
           (self.id, len(self.group_list), len(self.word_list))

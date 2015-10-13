@@ -49,7 +49,8 @@ class ImageIndicatorTable:
                 imgind = self.image_indicators[ mir_id ]
                 group_str = ','.join( [str(x) for x in sorted(imgind.group_list.keys())]) if (len(imgind.group_list)) else 'none'
                 word_str = ','.join( [str(x) for x in sorted(imgind.word_list.keys())]) if (len(imgind.word_list)) else 'none'
-                f.write( '%d %s %s\n' % ( mir_id, group_str, word_str ))
+                flags_str = ','.join( [str( imgind.word_source_flags[x] ) for x in sorted(imgind.word_list.keys())]) if (len(imgind.word_list)) else 'none'
+                f.write( '%d %s %s %s\n' % ( mir_id, group_str, word_str, flags_str ))
 
     @staticmethod
     def read_from_file( fn, id_list = None ):
@@ -67,17 +68,31 @@ class ImageIndicatorTable:
                     break
                 c_line += 1
                 fields = raw_line.strip().split()
-                if len(fields) != 3:
-                    raise AssertionError( '%s line %d: expected 3 fields, got %d' % \
+                if len(fields) != 4:
+                    raise AssertionError( '%s line %d: expected 4 fields, got %d' % \
                                         (fn, c_line, len(fields)))
                 id = int( fields[0] )
                 if (id_list is not None) and (id not in id_list):
                     next
                 ii = ImageIndicator( id )
                 if fields[1] != 'none':
-                    ii.group_list = { x: True for x in fields[1].split(',') }
+                    ii.group_list = { int(x): True for x in fields[1].split(',') }
                 if fields[2] != 'none':
-                    ii.word_list = { x: True for x in fields[2].split(',') }
+                    word_indices = fields[2].split(',')
+                    ii.word_list = { int(x): True for x in word_indices }
+                    if fields[3] == 'none':
+                        raise AssertionError('id %d: %d words, but no source flags?\n' % (id, len(word_indices)))
+                    ii.word_source_list = dict()
+                    d = fields[3].split(',')
+                    if (len( word_indices ) != len( d )):
+                        raise AssertionError('id %d: %d words, but %d source flags\n' % (id, len(word_indices), len(d)))
+                    for i in range(0, len(word_indices)):
+                        flag_target = int(word_indices[i])
+                        flag_value = int(d[i])
+                        ii.word_source_flags[ flag_target ] = flag_value
+                else:
+                    if fields[3] != 'none':
+                        raise AssertionError('id %d: no words, but carries source flags?\n' % id )
 
                 t.image_indicators[ id ] = ii
         return t
