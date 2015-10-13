@@ -47,8 +47,8 @@ class ImageIndicatorTable:
         with open( fn, 'w' ) as f:
             for mir_id in sorted( id_list ):
                 imgind = self.image_indicators[ mir_id ]
-                group_str = ','.join(map(str, sorted( imgind.group_list.keys() ))) if (len(imgind.group_list)) else 'none'
-                word_str = ','.join(map(str, sorted( imgind.word_list.keys() ))) if (len(imgind.word_list)) else 'none'
+                group_str = ','.join( [str(x) for x in sorted(imgind.group_list.keys())]) if (len(imgind.group_list)) else 'none'
+                word_str = ','.join( [str(x) for x in sorted(imgind.word_list.keys())]) if (len(imgind.word_list)) else 'none'
                 f.write( '%d %s %s\n' % ( mir_id, group_str, word_str ))
 
     @staticmethod
