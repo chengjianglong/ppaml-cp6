@@ -79,6 +79,13 @@ class ImageEdge:
         else:
             return '1'
 
+    @staticmethod
+    def canonical_flag_int( s ):
+        if (s == '0') or (s == '.'):
+            return 0
+        else:
+            return 1
+
 
     @staticmethod
     def edges_in_nodeset( paths, phase_key, nodes ):
