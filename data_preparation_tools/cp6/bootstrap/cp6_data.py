@@ -79,7 +79,7 @@ class CP6Data:
         self.imglut.set_from_mcauley( self.paths.node_features_path, \
                                       self.paths.stopwords_path )
         sys.stderr.write( 'Info: Image Indicator LUT has %d groups, %d words\n' % \
-                          ( len(self.imglut.group_text_lut), len(self.imglut.word_text_lut )))
+                          ( len(self.imglut.group_text_lut), len(self.imglut.tag_text_lut )))
 
         self.image_indicator_table = ImageIndicatorTable()
         (c_iit_groups, c_iit_words, n) = (0,0,0)

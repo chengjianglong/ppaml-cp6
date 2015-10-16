@@ -44,7 +44,7 @@ if len(sys.argv) != 4:
 
 img_id = int(sys.argv[3])
 iilut = ImageIndicatorLookupTable.read_from_file( sys.argv[1] )
-sys.stderr.write( 'Info: IILUT has %d groups, %d words\n' % (len(iilut.group_text_lut), len(iilut.word_text_lut)))
+sys.stderr.write( 'Info: IILUT has %d groups, %d tags\n' % (len(iilut.group_text_lut), len(iilut.tag_text_lut)))
 
 iit = ImageIndicatorTable.read_from_file( sys.argv[2] )
 sys.stderr.write( 'Info: IIT has %d images\n' % len(iit.image_indicators ))

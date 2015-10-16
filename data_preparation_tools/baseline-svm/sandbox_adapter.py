@@ -80,7 +80,7 @@ class SandboxAdapter:
             # write the header line [1]
 
             nGroups = len( ii_lookup_table.group_text_lut )
-            nTags = len( ii_lookup_table.word_text_lut )
+            nTags = len( ii_lookup_table.tag_text_lut )
             nLabels = len( label_table.label2id )
             f.write('%d %d %d\n' % ( nGroups, nTags, nLabels ))
 
@@ -95,7 +95,7 @@ class SandboxAdapter:
 
             # write the tag lines [3] .. not sure how McAuley's code handles UTF-8?
 
-            for i in sorted( ii_lookup_table.word_text_lut.iteritems(), key=lambda x:x[1] ):
+            for i in sorted( ii_lookup_table.tag_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
                 f.write( '%d %s\n' % ( c, entry_text ))
                 c += 1

@@ -46,11 +46,16 @@ from cp6.utilities.image_indicator import ImageIndicator
 ## the appropriate flags in the image indicator if so.
 ##
 
+# McAuley keeps separate lists for groups, tags, and words. I initially
+# failed to understand this, because groups and tags are loaded
+# from one file (nodeFeatures) and the words are loaded from another
+# (trainingText).
+
 class ImageIndicatorLookupTable:
 
     def __init__( self ):
         self.group_text_lut = dict() # key: text, val: entry ID
-        self.word_text_lut = dict() # key: text, val: entry ID
+        self.tag_text_lut = dict() # key: text, val: entry ID
 
     def rev_lookup( self, tag, id ):
         if tag == 'G':
@@ -58,7 +63,7 @@ class ImageIndicatorLookupTable:
                 if (i[1] == id):
                     return i[0]
         elif tag == 'W':
-            for i in self.word_text_lut.iteritems():
+            for i in self.tag_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
         else:
@@ -119,7 +124,7 @@ class ImageIndicatorLookupTable:
                 if fields[1] in stopwords:
                     n_stopwords_found += 1
                 else:
-                    self.word_text_lut[ fields[1] ] = index
+                    self.tag_text_lut[ fields[1] ] = index
                     index += 1
         sys.stderr.write('Info: Found %d stopwords reading LUT\n' % n_stopwords_found)
 
@@ -147,26 +152,26 @@ class ImageIndicatorLookupTable:
                     entry_id = self.group_text_lut[ word ]
                     imgind.group_list[ entry_id ] = True
 
-            elif ind_type == 'W':
-                if word in self.word_text_lut:
-                    entry_id = self.word_text_lut[ word ]
+            elif ind_type == 'T':
+                if word in self.tag_text_lut:
+                    entry_id = self.tag_text_lut[ word ]
                     if not entry_id in imgind.word_list:
                         imgind.word_source_flags[ entry_id ] = ImageIndicator.IN_NONE
                     imgind.word_list[ entry_id ] = True
-                    imgind.word_source_flags[ entry_id ] |= source_flag
+                    imgind.word_source_flags[ entry_id ] |= (source_flag | ImageIndicator.SRC_IS_TAG )
 
             else:
                 raise AssertionError( 'Bad indicator type %s\n' % ind_type )
 
     def write_to_file( self, fn ):
         with open( fn, 'w' ) as f:
-            f.write( '%d %d\n' % (len(self.group_text_lut), len(self.word_text_lut)))
+            f.write( '%d %d\n' % (len(self.group_text_lut), len(self.tag_text_lut)))
             for i in sorted( self.group_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
                 f.write( '%d G %s\n' % ( entry_id, Util.qstr( entry_text )))
-            for i in sorted( self.word_text_lut.iteritems(), key=lambda x:x[1] ):
+            for i in sorted( self.tag_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
-                f.write( '%d W %s\n' % ( entry_id, Util.qstr( entry_text )))
+                f.write( '%d T %s\n' % ( entry_id, Util.qstr( entry_text )))
 
     @staticmethod
     def read_from_file( fn ):
@@ -194,11 +199,11 @@ class ImageIndicatorLookupTable:
                 if len(fields) != 3:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
                                           (fn, i, len(word_fields)))
-                if fields[1] != 'W':
+                if fields[1] != 'T':
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "W"' % \
                                           (fn, i, fields[1]))
 
-                t.word_text_lut[ fields[2] ] = int( fields[0] )
+                t.tag_text_lut[ fields[2] ] = int( fields[0] )
 
         return t
 

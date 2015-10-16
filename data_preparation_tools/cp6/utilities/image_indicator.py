@@ -47,7 +47,9 @@ class ImageIndicator:
     # word_source_flags: key: IILUT id in word_table; value: bitwise-OR of source flags
     #
 
-    (IN_NONE, IN_TITLE, IN_DESC, IN_TAG, IN_COMMENT) = (0x0,0x01,0x02,0x04,0x08)
+    (IN_NONE, IN_TITLE, IN_DESC, IN_TAG, IN_COMMENT, SRC_IS_TAG, SRC_IS_WORD) = (0x0,0x01,0x02,0x04,0x08,0x100,0x200)
+    SRC_FLAG_MASK = SRC_IS_TAG | SRC_IS_WORD
+
     def __init__( self, id ):
         self.id = id
         self.group_list = dict()
