@@ -83,11 +83,19 @@ class ImageEdge:
 
     @staticmethod
     def get_shared_group_id_vector( imgIndA, imgIndB ):
-        return list( set(imgIndA.group_list.keys()) & set(imgIndB.group_list.keys()))
+        if imgIndA.group_keys is None:
+            imgIndA.group_keys = set(imgIndA.group_list.keys())
+        if imgIndB.group_keys is None:
+            imgIndB.group_keys = set(imgIndB.group_list.keys())
+        return list( imgIndA.group_keys & imgIndB.group_keys )
 
     @staticmethod
     def get_shared_word_id_vector( imgIndA, imgIndB ):
-        return list( set(imgIndA.word_list.keys()) & set(imgIndB.word_list.keys()))
+        if imgIndA.word_keys is None:
+            imgIndA.word_keys = set(imgIndA.word_list.keys())
+        if imgIndB.word_keys is None:
+            imgIndB.word_keys = set(imgIndB.word_list.keys())
+        return list( imgIndA.word_keys & imgIndB.word_keys )
 
     @staticmethod
     def canonical_flag( s ):

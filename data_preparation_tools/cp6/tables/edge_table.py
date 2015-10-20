@@ -31,6 +31,8 @@
 
 import sys
 import copy
+import time
+
 from cp6.utilities.image_edge import ImageEdge
 
 class EdgeTable:
@@ -40,11 +42,23 @@ class EdgeTable:
 
     def write_to_file( self, fn, ids_to_keep = None ):
         (c_total, c_written) = (0,0)
+        if ids_to_keep is not None:
+            maxid = max(ids_to_keep)
+            id_to_keep_list = [0]*(maxid+1)
+            for i in ids_to_keep:
+#                sys.stderr.write('index %d max %d len %d\n' % (i, maxid, len(id_to_keep_list)))
+                id_to_keep_list[i] = 1
+
         with open(fn, 'w') as f:
-            for e in self.edges:
+            for index in range(0,len(self.edges)):
+                e = self.edges[index]
+                (ea, eb) = (e.image_A_id, e.image_B_id)
                 c_total += 1
-                write_this_edge = (ids_to_keep is None) or \
-                                  ((e.image_A_id in ids_to_keep) and (e.image_B_id in ids_to_keep))
+#                write_this_edge = (ids_to_keep is None) or \
+#                                  ((e.image_A_id in ids_to_keep) and (e.image_B_id in ids_to_keep))
+                write_this_edge = (ids_to_keep is None) or\
+                                  ((ea <= maxid) and (id_to_keep_list[ea]==1) and\
+                                   (eb <= maxid) and (id_to_keep_list[eb]==1))
                 if not write_this_edge:
                     continue
                 c_written += 1
@@ -63,6 +77,7 @@ class EdgeTable:
         edges = list()
         c_line = 0
         with open(fn) as f:
+            t_start = time.clock()
             while 1:
                 raw_line = f.readline()
                 if not raw_line:
@@ -81,4 +96,6 @@ class EdgeTable:
                     edges.append( ImageEdge( image_A_id, image_B_id, \
                                              sharedGroups, sharedWords, sharedWordTypes, \
                                              fields[7], fields[8], fields[9] ))
+        t_elapsed = time.clock() - t_start
+        sys.stderr.write('Info: read in %f seconds\n' % t_elapsed)
         return EdgeTable( edges )

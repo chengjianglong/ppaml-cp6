@@ -56,10 +56,14 @@ class Paths:
         # path to McAuley's node-level training data
         self.node_features_path = prefix+'/src_data/nodeFeaturesMIR.txt'
 
+        # path to McAuley's text training data
+        self.text_features_path = prefix+'/src_data/trainingTextMIR.txt'
+
         # path to McAuley's edge feature data
         self.edge_features_path = prefix+'/src_data/trainingEdgeFeaturesMIR.txt'
 
-        output_prefix = '/Users/collinsr/work/ppaml/2015-06-cp6-prep/ppaml-tables'
+        #output_prefix = '/Users/collinsr/work/ppaml/2015-06-cp6-prep/ppaml-tables'
+        output_prefix = '/Users/collinsr/tmp/ppaml'
 
         # path to the label table
         self.label_table_path = output_prefix+'/cp6_label_table.txt'

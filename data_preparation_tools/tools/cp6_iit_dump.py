@@ -44,7 +44,7 @@ if len(sys.argv) != 4:
 
 img_id = int(sys.argv[3])
 iilut = ImageIndicatorLookupTable.read_from_file( sys.argv[1] )
-sys.stderr.write( 'Info: IILUT has %d groups, %d tags\n' % (len(iilut.group_text_lut), len(iilut.tag_text_lut)))
+sys.stderr.write( 'Info: IILUT has %d groups, %d tags\n' % (len(iilut.group_text_lut), len(iilut.tag_word_text_lut)))
 
 iit = ImageIndicatorTable.read_from_file( sys.argv[2] )
 sys.stderr.write( 'Info: IIT has %d images\n' % len(iit.image_indicators ))
@@ -64,6 +64,8 @@ for lut_id in sorted([int(x) for x in ii.group_list.keys()]):
 i = 1
 for lut_id in sorted([int(x) for x in ii.word_list.keys()]):
     val = iilut.rev_lookup( 'W', lut_id )
+    if not val:
+        val = iilut.rev_lookup( 'T', lut_id )
     if not val:
         (val_str, flags_str) = ('none', 'none')
     else:

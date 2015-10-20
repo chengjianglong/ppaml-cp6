@@ -77,9 +77,10 @@ class CP6Data:
 
         self.imglut = ImageIndicatorLookupTable()
         self.imglut.set_from_mcauley( self.paths.node_features_path, \
+                                      self.paths.text_features_path, \
                                       self.paths.stopwords_path )
-        sys.stderr.write( 'Info: Image Indicator LUT has %d groups, %d words\n' % \
-                          ( len(self.imglut.group_text_lut), len(self.imglut.tag_text_lut )))
+        sys.stderr.write( 'Info: Image Indicator LUT has %d groups, %d tags and words\n' % \
+                          ( len(self.imglut.group_text_lut), len(self.imglut.tag_word_text_lut )))
 
         self.image_indicator_table = ImageIndicatorTable()
         (c_iit_groups, c_iit_words, n) = (0,0,0)
@@ -316,6 +317,6 @@ if __name__ == '__main__':
     d.write_global_tables()
 
     d.write_phase_tables( 'r1train' )
-    d.write_phase_tables( 'r1test' )
-    d.write_phase_tables( 'r2train' )
-    d.write_phase_tables( 'r2test' )
+   # d.write_phase_tables( 'r1test' )
+   # d.write_phase_tables( 'r2train' )
+   # d.write_phase_tables( 'r2test' )

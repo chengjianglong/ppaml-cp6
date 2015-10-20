@@ -80,7 +80,7 @@ class SandboxAdapter:
             # write the header line [1]
 
             nGroups = len( ii_lookup_table.group_text_lut )
-            nTags = len( ii_lookup_table.tag_text_lut )
+            nTags = sum(1 for x in ii_lookup_table.tag_word_text_src.values() if x == 'T')
             nLabels = len( label_table.label2id )
             f.write('%d %d %d\n' % ( nGroups, nTags, nLabels ))
 
@@ -94,12 +94,16 @@ class SandboxAdapter:
                 c += 1
 
             # write the tag lines [3] .. not sure how McAuley's code handles UTF-8?
-
-            for i in sorted( ii_lookup_table.tag_text_lut.iteritems(), key=lambda x:x[1] ):
-                (entry_id, entry_text) = (i[1], i[0])
+            emitted_tag_ids = list()
+            for i in sorted( [k for k,v in ii_lookup_table.tag_word_text_src.iteritems() if (v == 'T')]):
+                (entry_id, entry_text) = (i, ii_lookup_table.tag_word_text_lut[i])
                 f.write( '%d %s\n' % ( c, entry_text ))
+                emitted_tag_ids.append( entry_id )
                 c += 1
 
+            if len(emitted_tag_ids) != nTags:
+                raise AssertionError('Expected to emit %d tags but only wrote %d\n' %\
+                                     (nTags, len(emitted_tag_ids)))
             # write the label lines [4]
 
             for i in sorted( label_table.label2id.iteritems(), key=lambda x:x[1] ):
@@ -124,7 +128,7 @@ class SandboxAdapter:
                     else:
                         s += '.'
                 for i in range(0, nTags):
-                    if i in ii.word_list:
+                    if emitted_tag_ids[i] in ii.word_list:
                         s += '1'
                     else:
                         s += '.'

@@ -55,6 +55,8 @@ class ImageIndicator:
         self.group_list = dict()
         self.word_list = dict()
         self.word_source_flags = dict()
+        self.group_keys = None  # set by ImageEdge:get_shared_group_id_vector
+        self.word_keys = None   # set by ImageEdge:get_shared_word_id_vector
 
     @staticmethod
     def flag2str( flag ):

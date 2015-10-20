@@ -50,20 +50,30 @@ from cp6.utilities.image_indicator import ImageIndicator
 # failed to understand this, because groups and tags are loaded
 # from one file (nodeFeatures) and the words are loaded from another
 # (trainingText).
+#
+# We're mostly interested in (a) folding in the text features along
+# with the existing tags, while (b) remembering if a string came from
+# a tag or a text feature, yet (c) not changing the existing code much.
+#
+# We'll keep tag and text in a single dictionary and a single domain of
+# entry IDs. It's a little inconsistent but I think it's the lowest-
+# impact way to add text back in.
+#
 
 class ImageIndicatorLookupTable:
 
     def __init__( self ):
         self.group_text_lut = dict() # key: text, val: entry ID
-        self.tag_text_lut = dict() # key: text, val: entry ID
+        self.tag_word_text_lut = dict() # key: text, val: entry ID
+        self.tag_word_text_src = dict() # key: entry ID, val: 'T' or 'W'
 
     def rev_lookup( self, tag, id ):
         if tag == 'G':
             for i in self.group_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
-        elif tag == 'W':
-            for i in self.tag_text_lut.iteritems():
+        elif (tag == 'W') or (tag == 'T') :
+            for i in self.tag_word_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
         else:
@@ -71,7 +81,7 @@ class ImageIndicatorLookupTable:
 
         return None
 
-    def set_from_mcauley( self, fn, stopwords_fn ):
+    def set_from_mcauley( self, node_fn, text_features_fn, stopwords_fn ):
         stopwords = dict()
         with open( stopwords_fn ) as f:
             while 1:
@@ -83,11 +93,12 @@ class ImageIndicatorLookupTable:
         sys.stderr.write('Info: read %d stopwords\n' % len(stopwords))
 
         n_stopwords_found = 0
-        with open( fn ) as f:
+        tag_word_text_index = 0
+        with open( node_fn ) as f:
             header_fields = f.readline().strip().split()
             if len(header_fields) != 3:
                 raise AssertionError( 'Found %d fields in header of %s; expecting 3\n' % \
-                                      ( len(header_fields), fn ))
+                                      ( len(header_fields), node_fn ))
             (n_groups, n_tags, n_labels) = \
               (int(header_fields[0]), int(header_fields[1]), int(header_fields[2]))
 
@@ -99,23 +110,23 @@ class ImageIndicatorLookupTable:
                 raw_line = f.readline()
                 if not raw_line:
                     raise AssertionError( 'Failed to read group line %d in %s\n' % \
-                                          (index, fn ) )
+                                          (index, node_fn ) )
                 fields = raw_line.strip().split()
                 if len(fields) != 2:
                     raise AssertionError( 'Found %d fields in group line "%s"; expecting 2\n' % \
                                           (len(fields), raw_line.strip()))
                 self.group_text_lut[ fields[1] ] = index
 
+
             #
-            # set the words
+            # set the tags
             #
 
-            index = 0
             for i in range( 0, n_tags ):
                 raw_line = f.readline()
                 if not raw_line:
                     raise AssertionError( 'Failed to read tag line %d in %s\n' % \
-                                          (index, fn ) )
+                                          (index, node_fn ) )
                 fields = raw_line.strip().split()
                 if len(fields) != 2:
                     raise AssertionError( 'Found %d fields in tag line "%s"; expecting 2\n' % \
@@ -124,8 +135,38 @@ class ImageIndicatorLookupTable:
                 if fields[1] in stopwords:
                     n_stopwords_found += 1
                 else:
-                    self.tag_text_lut[ fields[1] ] = index
-                    index += 1
+                    self.tag_word_text_lut[ fields[1] ] = tag_word_text_index
+                    self.tag_word_text_src[ tag_word_text_index ] = 'T'
+                    tag_word_text_index += 1
+
+
+        with open( text_features_fn ) as f:
+            header_fields = f.readline().strip().split()
+            if len(header_fields) != 1:
+                raise AssertionError( 'Found %d fields in header of %s; expecting 1\n' % \
+                                      ( len(header_fields), text_fn ))
+            n_words = int(header_fields[0])
+
+            #
+            # set the words
+            #
+
+            for i in range( 0, n_words ):
+                raw_line = f.readline()
+                if not raw_line:
+                    raise AssertionError( 'Failed to read word line %d in %s\n' % \
+                                          (index, text_fn ))
+                fields = raw_line.strip().split()
+                if len(fields) != 2:
+                    raise AssertionError( 'Found %d fields in word line "%s"; expecting 2\n' % \
+                                          (len(fields), raw_line.strip()))
+                if fields[1] in stopwords:
+                    n_stopwords_found += 1
+                else:
+                    self.tag_word_text_lut[ fields[1] ] = tag_word_text_index
+                    self.tag_word_text_src[ tag_word_text_index ] = 'W'
+                    tag_word_text_index += 1
+
         sys.stderr.write('Info: Found %d stopwords reading LUT\n' % n_stopwords_found)
 
 
@@ -152,9 +193,9 @@ class ImageIndicatorLookupTable:
                     entry_id = self.group_text_lut[ word ]
                     imgind.group_list[ entry_id ] = True
 
-            elif ind_type == 'T':
-                if word in self.tag_text_lut:
-                    entry_id = self.tag_text_lut[ word ]
+            elif ind_type == 'W':
+                if word in self.tag_word_text_lut:
+                    entry_id = self.tag_word_text_lut[ word ]
                     if not entry_id in imgind.word_list:
                         imgind.word_source_flags[ entry_id ] = ImageIndicator.IN_NONE
                     imgind.word_list[ entry_id ] = True
@@ -165,11 +206,11 @@ class ImageIndicatorLookupTable:
 
     def write_to_file( self, fn ):
         with open( fn, 'w' ) as f:
-            f.write( '%d %d\n' % (len(self.group_text_lut), len(self.tag_text_lut)))
+            f.write( '%d %d\n' % (len(self.group_text_lut), len(self.tag_word_text_lut)))
             for i in sorted( self.group_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
                 f.write( '%d G %s\n' % ( entry_id, Util.qstr( entry_text )))
-            for i in sorted( self.tag_text_lut.iteritems(), key=lambda x:x[1] ):
+            for i in sorted( self.tag_word_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
                 f.write( '%d T %s\n' % ( entry_id, Util.qstr( entry_text )))
 
@@ -200,10 +241,10 @@ class ImageIndicatorLookupTable:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
                                           (fn, i, len(word_fields)))
                 if fields[1] != 'T':
-                    raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "W"' % \
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "T"' % \
                                           (fn, i, fields[1]))
 
-                t.tag_text_lut[ fields[2] ] = int( fields[0] )
+                t.tag_word_text_lut[ fields[2] ] = int( fields[0] )
 
         return t
 
