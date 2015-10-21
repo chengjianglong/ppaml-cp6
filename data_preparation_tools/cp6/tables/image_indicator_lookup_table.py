@@ -72,7 +72,7 @@ class ImageIndicatorLookupTable:
             for i in self.group_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
-        elif (tag == 'W') or (tag == 'T') :
+        elif ( (tag == 'W') or (tag == 'T') ):
             for i in self.tag_word_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
@@ -103,7 +103,7 @@ class ImageIndicatorLookupTable:
               (int(header_fields[0]), int(header_fields[1]), int(header_fields[2]))
 
             #
-            # set the groups
+            # set the groups (group_text_lut only)
             #
 
             for index in range( 0, n_groups ):
@@ -119,7 +119,7 @@ class ImageIndicatorLookupTable:
 
 
             #
-            # set the tags
+            # set the tags (shares tag_word_text_lut with words)
             #
 
             for i in range( 0, n_tags ):
@@ -148,7 +148,7 @@ class ImageIndicatorLookupTable:
             n_words = int(header_fields[0])
 
             #
-            # set the words
+            # set the words (shares tag_word_text_lut with tags)
             #
 
             for i in range( 0, n_words ):
@@ -174,7 +174,9 @@ class ImageIndicatorLookupTable:
         #
         # Given the existing image indicator imgind, look up the words in
         # new_text in the appropriate {group,word}_table. If present, record
-        # it in imgind.
+        # it in imgind. Here the ind_type is only 'G' or 'W', indicating which
+        # of the two lookup tables to search; 'W' stands for both words and tags.
+        # I fully appreciate how borked this is.
         #
         # groups have no 'source', they're just from groups. (If we recorded
         # the various flavors of flickr groups-- albums vs. galleries, etc-- it
@@ -199,7 +201,9 @@ class ImageIndicatorLookupTable:
                     if not entry_id in imgind.word_list:
                         imgind.word_source_flags[ entry_id ] = ImageIndicator.IN_NONE
                     imgind.word_list[ entry_id ] = True
-                    imgind.word_source_flags[ entry_id ] |= (source_flag | ImageIndicator.SRC_IS_TAG )
+                    # did we find this text as a 'word' or a 'tag'?
+                    source_flag = ImageIndicator.SRC_IS_TAG if (self.tag_word_text_src[ entry_id ] == 'T' ) else ImageIndicator.SRC_IS_WORD
+                    imgind.word_source_flags[ entry_id ] |= (source_flag | source_flag )
 
             else:
                 raise AssertionError( 'Bad indicator type %s\n' % ind_type )
@@ -212,7 +216,7 @@ class ImageIndicatorLookupTable:
                 f.write( '%d G %s\n' % ( entry_id, Util.qstr( entry_text )))
             for i in sorted( self.tag_word_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
-                f.write( '%d W %s\n' % ( entry_id, Util.qstr( entry_text )))
+                f.write( '%d %s %s\n' % ( entry_id, self.tag_word_text_src[ entry_id], Util.qstr( entry_text )))
 
     @staticmethod
     def read_from_file( fn ):
@@ -222,7 +226,7 @@ class ImageIndicatorLookupTable:
             if len(header_fields) != 2:
                 raise AssertionError( 'ImageIndicatorLookupTable "%s": header had %d fields, expected 2' % \
                                       ( fn, len(header_fields)))
-            (n_groups, n_words) = map(int, header_fields)
+            (n_groups, n_words_and_tags) = map(int, header_fields)
 
             for i in range(0, n_groups):
                 fields = Util.qstr_split( f.readline().strip() )
@@ -235,24 +239,26 @@ class ImageIndicatorLookupTable:
 
                 t.group_text_lut[ fields[2] ] = int( fields[0] )
 
-            for i in range(0, n_words):
+            for i in range(0, n_words_and_tags):
                 fields = Util.qstr_split( f.readline().strip() )
                 if len(fields) != 3:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
                                           (fn, i, len(word_fields)))
-                if fields[1] != 'W':
-                    raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "T"' % \
+                if (fields[1] != 'W')  and (fields[1] != 'T'):
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "W" or "T"' % \
                                           (fn, i, fields[1]))
 
                 t.tag_word_text_lut[ fields[2] ] = int( fields[0] )
+                t.tag_word_text_src[ int(fields[0] ) ] = fields[1]
 
+        sys.stderr.write('Info: IILUT read %d / %d / %d groups / tags / words\n' % \
+                         (len(t.group_text_lut), t.tag_word_text_src.values().count('T'), \
+                          t.tag_word_text_src.values().count('W')))
         return t
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         sys.stderr.write('Usage: $0 input-img-indicator-table output-img-indicator-table\n')
         sys.exit(0)
-    t = ImageIndicatorTable.read_from_file( sys.argv[1] )
-    sys.stderr.write('Info: image indicator table has %d grops and %d words\n' \
-                     % (len(t.groups), len(t.words)))
+    t = ImageIndicatorLookupTable.read_from_file( sys.argv[1] )
     t.write_to_file( sys.argv[2] )
