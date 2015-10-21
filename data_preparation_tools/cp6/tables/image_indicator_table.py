@@ -40,7 +40,6 @@ class ImageIndicatorTable:
 
     def write_to_file( self, fn, id_list = None ):
         if not id_list:
-            sys.stderr.write( 'Debug: %s passed null id_list, sorting %d keys' % (fn, len(self.image_indicators.keys)))
             id_list = sorted( self.image_indicators.keys() )
         else:
             sys.stderr.write( 'Debug: %s passed %d id_list' % (fn, len(id_list)))
@@ -96,3 +95,11 @@ class ImageIndicatorTable:
 
                 t.image_indicators[ id ] = ii
         return t
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: $0 input-img-indicator-table output-img-indicator-table\n')
+        sys.exit(0)
+    t = ImageIndicatorTable.read_from_file( sys.argv[1] )
+    sys.stderr.write('Info: image indicator table has %d entries\n' % len(t.image_indicators))
+    t.write_to_file( sys.argv[2] )

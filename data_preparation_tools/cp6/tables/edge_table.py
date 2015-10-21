@@ -99,3 +99,11 @@ class EdgeTable:
         t_elapsed = time.clock() - t_start
         sys.stderr.write('Info: read in %f seconds\n' % t_elapsed)
         return EdgeTable( edges )
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: $0 input-edge-table output-edge-table\n')
+        sys.exit(0)
+    t = EdgeTable.read_from_file( sys.argv[1] )
+    sys.stderr.write('Info: edge table has %d entries\n' % len(t.edges))
+    t.write_to_file( sys.argv[2] )
