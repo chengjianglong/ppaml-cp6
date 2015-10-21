@@ -38,6 +38,7 @@
 import sys
 from cp6.utilities.util import Util
 from cp6.tables.image_table import ImageTable
+from cp6.utilities.image_edge import ImageEdge
 from cp6.tables.label_table import LabelTable
 
 if len(sys.argv) != 5:
@@ -50,7 +51,38 @@ sys.stderr.write('Info: read %d labels\n' % len(lt.idset))
 true_it = ImageTable.read_from_file( sys.argv[2] )
 sys.stderr.write('Info: read %d answer-key entries\n' % len( true_it.entries ))
 
-computed_it = ImageTable.read_from_file( sys.argv[3] )
+nLabels = len(lt.idset)
+
+##
+## Allow partial image tables with only image IDs and label vectors
+##
+
+n_fields = 0
+with open( sys.argv[3] ) as f:
+    n_fields = len(f.readline().split())
+
+print "Found ",n_fields
+if n_fields == nLabels + 1:
+    # attempt to read as a scoring-only pseudo-image-table
+    computed_it = ImageTable()
+    with open( sys.argv[3] ) as f:
+        while 1:
+            raw_line = f.readline()
+            if not raw_line:
+                break
+            fields = raw_line.split()
+            if len(fields) != (nLabels+1):
+                raise AssertionError('Attempted to read %s as a score-only pseudo-image-table, but found %d fields on line %d; expected %d\n' % \
+                                    (len(fields), len(t.entries)+1, (nLabels+1)))
+            e = ImageTableEntry()
+            e.mir_id = int(fields[0])
+            e.label_vector = map(float, fields[1:])
+            computed_it.entries[ e.mir_id ] = e
+
+else:
+    # read as a full-up image table
+    computed_it = ImageTable.read_from_file( sys.argv[3] )
+
 sys.stderr.write('Info: read %d computed entries\n' % len(computed_it.entries ))
 
 with open( sys.argv[4] ) as f:
@@ -59,8 +91,6 @@ with open( sys.argv[4] ) as f:
 if len( threshold_table ) != len( lt.idset ):
     sys.stderr.write('Error: found %d thresholds, expected %d; exiting\n' % (len(threshold_table), len(lt.idset)))
     sys.exit(1)
-
-nLabels = len(lt.idset)
 
 #
 # Compute mean average precision thusly:
