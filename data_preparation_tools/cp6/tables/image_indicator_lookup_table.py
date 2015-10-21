@@ -212,7 +212,7 @@ class ImageIndicatorLookupTable:
                 f.write( '%d G %s\n' % ( entry_id, Util.qstr( entry_text )))
             for i in sorted( self.tag_word_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
-                f.write( '%d T %s\n' % ( entry_id, Util.qstr( entry_text )))
+                f.write( '%d W %s\n' % ( entry_id, Util.qstr( entry_text )))
 
     @staticmethod
     def read_from_file( fn ):
@@ -240,7 +240,7 @@ class ImageIndicatorLookupTable:
                 if len(fields) != 3:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
                                           (fn, i, len(word_fields)))
-                if fields[1] != 'T':
+                if fields[1] != 'W':
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "T"' % \
                                           (fn, i, fields[1]))
 
