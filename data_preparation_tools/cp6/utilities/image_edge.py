@@ -61,22 +61,12 @@ class ImageEdge:
                 raise AssertionError( 'Edge between %d and %d: shared word flags %d, %d\n' % \
                                       (imgIndA.id, imgIndB.id, a_flag, b_flag))
 
-            # need to strip out the source flags
-            a_src_flag = a_flag & ImageIndicator.SRC_FLAG_MASK
-            b_src_flag = b_flag & ImageIndicator.SRC_FLAG_MASK
-
-            # these should be the same
-            if (a_src_flag != b_src_flag):
-                raise AssertionError( 'Edge between %d and %d: inconsisitent source flags %d, %d\n' % (imgIndA.id, imdIndB.id, a_flag, b_flag))
-
-            # strip
-            a_flag &= ~a_src_flag
-            b_flag &= ~b_src_flag
+            # strip source flags
+            a_flag &= ~ImageIndicator.SRC_FLAG_MASK
+            b_flag &= ~ImageIndicator.SRC_FLAG_MASK
 
             shared_word_types[i] = a_flag + (b_flag * 16)
 
-            # insert source flag back in
-            shared_word_types[i] |= a_src_flag
 
         return cls( imgIndA.id, imgIndB.id, sharedGroups, sharedWords, \
                     shared_word_types, same_user, same_location, shared_contact )

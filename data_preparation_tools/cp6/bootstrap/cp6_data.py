@@ -316,7 +316,7 @@ if __name__ == '__main__':
     d.write_debug_label_count_csv( 'labelcount.csv' )
     d.write_global_tables()
 
-    d.write_phase_tables( 'r1train' )
-   # d.write_phase_tables( 'r1test' )
-   # d.write_phase_tables( 'r2train' )
-   # d.write_phase_tables( 'r2test' )
+#    d.write_phase_tables( 'r1train' )
+    d.write_phase_tables( 'r1test' )
+#    d.write_phase_tables( 'r2train' )
+#    d.write_phase_tables( 'r2test' )

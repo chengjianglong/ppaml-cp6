@@ -65,14 +65,14 @@ class ImageIndicatorLookupTable:
     def __init__( self ):
         self.group_text_lut = dict() # key: text, val: entry ID
         self.tag_word_text_lut = dict() # key: text, val: entry ID
-        self.tag_word_text_src = dict() # key: entry ID, val: 'T' or 'W'
+        self.tag_word_text_src = dict() # key: entry ID, val: 'T', 'W' or 'B' (both T and W)
 
     def rev_lookup( self, tag, id ):
         if tag == 'G':
             for i in self.group_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
-        elif ( (tag == 'W') or (tag == 'T') ):
+        elif ( (tag == 'W') or (tag == 'T') or (tag == 'B') ):
             for i in self.tag_word_text_lut.iteritems():
                 if (i[1] == id):
                     return i[0]
@@ -163,9 +163,14 @@ class ImageIndicatorLookupTable:
                 if fields[1] in stopwords:
                     n_stopwords_found += 1
                 else:
-                    self.tag_word_text_lut[ fields[1] ] = tag_word_text_index
-                    self.tag_word_text_src[ tag_word_text_index ] = 'W'
-                    tag_word_text_index += 1
+                    if fields[1] in self.tag_word_text_lut:
+                        # mark the flag as 'B' (both)
+                        previous_entry_id = self.tag_word_text_lut[ fields[1] ]
+                        self.tag_word_text_src[ previous_entry_id ] = 'B'
+                    else:
+                        self.tag_word_text_lut[ fields[1] ] = tag_word_text_index
+                        self.tag_word_text_src[ tag_word_text_index ] = 'W'
+                        tag_word_text_index += 1
 
         sys.stderr.write('Info: Found %d stopwords reading LUT\n' % n_stopwords_found)
 
@@ -198,12 +203,8 @@ class ImageIndicatorLookupTable:
             elif ind_type == 'W':
                 if word in self.tag_word_text_lut:
                     entry_id = self.tag_word_text_lut[ word ]
-                    if not entry_id in imgind.word_list:
-                        imgind.word_source_flags[ entry_id ] = ImageIndicator.IN_NONE
                     imgind.word_list[ entry_id ] = True
-                    # did we find this text as a 'word' or a 'tag'?
-                    source_flag = ImageIndicator.SRC_IS_TAG if (self.tag_word_text_src[ entry_id ] == 'T' ) else ImageIndicator.SRC_IS_WORD
-                    imgind.word_source_flags[ entry_id ] |= (source_flag | source_flag )
+                    imgind.word_source_flags[ entry_id ] = source_flag
 
             else:
                 raise AssertionError( 'Bad indicator type %s\n' % ind_type )
@@ -244,16 +245,17 @@ class ImageIndicatorLookupTable:
                 if len(fields) != 3:
                     raise AssertionError( 'ImageIndicatorLookupTable "%s": word %d had %d fields, expected 3' % \
                                           (fn, i, len(word_fields)))
-                if (fields[1] != 'W')  and (fields[1] != 'T'):
-                    raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "W" or "T"' % \
+                if (fields[1] != 'W')  and (fields[1] != 'T') and (fields[1] != 'B'):
+                    raise AssertionError( 'ImageIndicatorLookupTable "%s": entry %d flavor was %s; expected "W", "T", or "B"' % \
                                           (fn, i, fields[1]))
 
                 t.tag_word_text_lut[ fields[2] ] = int( fields[0] )
                 t.tag_word_text_src[ int(fields[0] ) ] = fields[1]
 
-        sys.stderr.write('Info: IILUT read %d / %d / %d groups / tags / words\n' % \
+        sys.stderr.write('Info: IILUT read %d / %d / %d / %d groups / tags / words / both\n' % \
                          (len(t.group_text_lut), t.tag_word_text_src.values().count('T'), \
-                          t.tag_word_text_src.values().count('W')))
+                         t.tag_word_text_src.values().count('W'), \
+                         t.tag_word_text_src.values().count('B')))
         return t
 
 if __name__ == '__main__':
