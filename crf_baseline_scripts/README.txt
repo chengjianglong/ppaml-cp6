@@ -15,6 +15,7 @@ Prerequisits:
 	- If you want parrallel processing you will need to install openMPI and openMP.
 
 Experimental Setup:
+- The CRf learning and testing follows the methods used in [1]
 - Each label is processed separately through a one vs. other classifier
 - Each node of the CRF represents a single image
 - All of the unary and edge features are currently binary, but the origal feature spaces could be quantized to allow more granularity
@@ -39,9 +40,11 @@ Instructions for training and testing with CRF:
 3- You can also run the wrapper_crf_database_labeling_v2.m directly and step into the load_files_extract_structures.m and subroutines to determine how the raw data files are parsed.
  
 
-Trouble shooting:
+Troubleshooting:
 1 - When running the scripts for the first time you may get a Matlab error that says something like:
 	".../glnxa64/libstdc++.so.6:version 'BLIBCXX_3.4.18 not found (required by ..."
 	- To solve this run the following command in the ubuntu terminal window, where you adapt versions/paths to your system:
 	sudo ln -sf /usr/lib/x86_64-lsnux-gnu/libstdc++.so.6 /usr/local/MATLAB/R2015b/sys/os/glnxa64/libstdc++.so.6
 		
+References:
+[1] Justin Domke, "Learning Graphical Model Parameters with Approximate Marginal Inference," IEEE Transactions on Pattern Analysis, 2013
