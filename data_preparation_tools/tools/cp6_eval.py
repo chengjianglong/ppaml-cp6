@@ -68,19 +68,27 @@
 ##
 
 import sys
+import argparse
+import random
+
 from cp6.utilities.util import Util
 from cp6.tables.image_table import ImageTable
 from cp6.utilities.image_table_entry import ImageTableEntry
 from cp6.tables.label_table import LabelTable
 
-if len(sys.argv) != 5:
-    sys.stderr.write('Usage: $0 label-table image-table-truth image-table-computed threshold-table-computed\n')
-    sys.exit(1)
+parser = argparse.ArgumentParser( description='PPAML CP6 evaluation' )
+parser.add_argument( '--r', '--rand', choices=['b','p'], help='b|p; Replace computed values with random 0/1 values over either [b]inary or [p]rior-of-truth distributions' )
+parser.add_argument( '--lt', required=True, help='Label table' )
+parser.add_argument( '--tt', required=True, help='Truth image table (aka answer key)' )
+parser.add_argument( '--ct', required=True, help='Computed image table (may be in reduced form)' )
+parser.add_argument( '--tht', required='True', help='Threshold table for converting soft thresholds into hard 0/1 values')
 
-lt = LabelTable.read_from_file( sys.argv[1] )
+args = parser.parse_args()
+
+lt = LabelTable.read_from_file( args.lt )
 sys.stderr.write('Info: read %d labels\n' % len(lt.idset))
 
-true_it = ImageTable.read_from_file( sys.argv[2] )
+true_it = ImageTable.read_from_file( args.tt )
 sys.stderr.write('Info: read %d answer-key entries\n' % len( true_it.entries ))
 
 nLabels = len(lt.idset)
@@ -90,13 +98,13 @@ nLabels = len(lt.idset)
 ##
 
 n_fields = 0
-with open( sys.argv[3] ) as f:
+with open( args.ct ) as f:
     n_fields = len(f.readline().split())
 
 if n_fields == nLabels + 1:
     # attempt to read as a scoring-only pseudo-image-table
     computed_it = ImageTable()
-    with open( sys.argv[3] ) as f:
+    with open( args.ct ) as f:
         while 1:
             raw_line = f.readline()
             if not raw_line:
@@ -112,11 +120,35 @@ if n_fields == nLabels + 1:
 
 else:
     # read as a full-up image table
-    computed_it = ImageTable.read_from_file( sys.argv[3] )
+    computed_it = ImageTable.read_from_file( args.ct )
 
 sys.stderr.write('Info: read %d computed entries\n' % len(computed_it.entries ))
 
-with open( sys.argv[4] ) as f:
+if args.r is not None:
+    if args.r == 'b':
+        sys.stderr.write('Replacing computed answers with randoom 50/50 yes/no results...\n')
+        for (k, e) in computed_it.entries.iteritems():
+            for i in range(0, len(e.label_vector)):
+                e.label_vector[i] = random.choice( [-1, 1] )
+
+    elif args.r == 'p':
+        sys.stderr.write('Replacing computed answers with random yes/no results based on truth priors...\n')
+        # compute priors
+        counts = [0] * nLabels
+        for (k, e) in true_it.entries.iteritems():
+            for i in range(0, len(e.label_vector)):
+                if e.label_vector[i] == 1:
+                    counts[i] += 1
+        nOpportunities = len(computed_it.entries)
+        for (k, e) in computed_it.entries.iteritems():
+            for i in range(0, len(e.label_vector)):
+                v = random.randint(0, nOpportunities)
+                e.label_vector[i] = 1 if v < counts[i] else -1
+    else:
+        raise AssertionError('Logic error: unexpected "-r" argument %s' % args.r )
+
+
+with open( args.tht ) as f:
     threshold_table = map( float, f.readline().split() )
 
 if len( threshold_table ) != len( lt.idset ):
