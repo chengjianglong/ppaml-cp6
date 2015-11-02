@@ -209,6 +209,21 @@ class ImageIndicatorLookupTable:
             else:
                 raise AssertionError( 'Bad indicator type %s\n' % ind_type )
 
+    def verify( self ):
+        if len(self.tag_word_text_lut) != len(self.tag_word_text_src):
+            sys.stderr.write('IILUT error: %d entries but %d sources\n' % (len(self.tag_word_text_lut), len(self.tag_word_text_src)))
+            return False
+        for (k, v) in self.tag_word_text_lut.iteritems():
+            if v not in self.tag_word_text_src:
+                sys.stderr.write('IILUT error: entry %d (key %s) in lut but not source\n' % (v, k ))
+                return False
+        val_list = self.tag_word_text_lut.values()
+        for (k, v) in self.tag_word_text_src.iteritems():
+            if k not in val_list:
+                sys.stderr.write('IILUT error: source id %d (flag value %d) not an entry in lut\n' % (k, v))
+                return False
+        return True
+
     def write_to_file( self, fn ):
         with open( fn, 'w' ) as f:
             f.write( '%d %d\n' % (len(self.group_text_lut), len(self.tag_word_text_lut)))

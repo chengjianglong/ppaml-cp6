@@ -41,9 +41,30 @@ from cp6.utilities.image_edge import ImageEdge
 
 class SandboxAdapter:
 
+    def __init__( self, sandbox_root ):
+        self.files = dict()
+        self.files[ 'lt' ] = os.path.join( sandbox_root, 'eval_in', 'etc', 'label_table.txt' )
+        self.files[ 'iilut' ] = os.path.join( sandbox_root, 'eval_in', 'etc', 'image_indicator_lookup_table.txt' )
+
+        self.files[ 'train-it' ] = os.path.join( sandbox_root, 'run_in', 'training', 'image_table.txt' )
+        self.files[ 'test-it' ] = os.path.join( sandbox_root, 'run_in', 'testing', 'image_table.txt' )
+        self.files[ 'answer-it' ] = os.path.join( sandbox_root, 'eval_in', 'testing', 'image_table.txt' )
+
+        self.files[ 'train-iit' ] = os.path.join( sandbox_root, 'run_in', 'training', 'image_indicator_table.txt' )
+        self.files[ 'test-iit' ] = os.path.join( sandbox_root, 'run_in', 'testing', 'image_indicator_table.txt' )
+
+        self.files[ 'train-et' ] = os.path.join( sandbox_root, 'run_in', 'training', 'image_edge_table.txt' )
+        self.files[ 'test-et' ] = os.path.join( sandbox_root, 'run_in', 'testing', 'image_edge_table.txt' )
+
+        for (k,v) in self.files.iteritems():
+            if not os.path.isfile( v ):
+                raise AssertionError( 'Expected file %s (tag %s) is not present\n' % (v,k))
+
     @staticmethod
     def write_node_features( fn, ii_lookup_table, label_table, \
                              image_table, image_indicator_table ):
+        #
+        # node features are read starting at genericdata.cpp:188.
         #
         # The nodeFeatures file has the following layout:
         #
@@ -74,13 +95,15 @@ class SandboxAdapter:
         # Note that group_id, tag_id, label_id are all sequential:
         # the first tag_id is the last group_id + 1.
         #
+        # Note also that these aren't the word features.
+        #
 
         with open(fn, 'w') as f:
 
             # write the header line [1]
 
             nGroups = len( ii_lookup_table.group_text_lut )
-            nTags = sum(1 for x in ii_lookup_table.tag_word_text_src.values() if x == 'T')
+            nTags = sum(1 for x in ii_lookup_table.tag_word_text_src.values() if ((x == 'T') or ( x == 'B')))
             nLabels = len( label_table.label2id )
             f.write('%d %d %d\n' % ( nGroups, nTags, nLabels ))
 
@@ -95,8 +118,8 @@ class SandboxAdapter:
 
             # write the tag lines [3] .. not sure how McAuley's code handles UTF-8?
             emitted_tag_ids = list()
-            for i in sorted( [k for k,v in ii_lookup_table.tag_word_text_src.iteritems() if (v == 'T')]):
-                (entry_id, entry_text) = (i, ii_lookup_table.tag_word_text_lut[i])
+            for i in sorted( [v for k,v in ii_lookup_table.tag_word_text_lut.iteritems() if ii_lookup_table.tag_word_text_src[v] in ['T','B']]):
+                (entry_id, entry_text) = (v, k)
                 f.write( '%d %s\n' % ( c, entry_text ))
                 emitted_tag_ids.append( entry_id )
                 c += 1
@@ -141,7 +164,7 @@ class SandboxAdapter:
                         s += '0'
                     else:
                         s += '.'
-                    f.write('%d %s %s\n' %( img_id, user, s ))
+                f.write('%d %s %s\n' %( img_id, user, s ))
 
             # all done
 
@@ -207,7 +230,10 @@ class SandboxAdapter:
             # all done
 
     @staticmethod
-    def write_text_features( fn, image_table, image_indicator_table ):
+    def write_text_features( fn, image_table, image_indicator_table, iilut ):
+        #
+        # Use of this file is controlled by the nodeFeatures flag, but
+        # this is the only place the textFile variable is referenced.
         #
         # from genericdata.cpp:292: nWords is set, and nWords are parsed but
         # discarded. Then nPhotos are loaded, each line (:310) is:
@@ -222,7 +248,9 @@ class SandboxAdapter:
         # ...... For the pascal examples, val is always '1'.
         # ...... Also always '1' in trainingTextMIR.txt.
         #
-        # These are read into the nodeFeatures array (see :316.)
+        # These are read into the nodeFeatures array (see :316) at the
+        # offset after the imagefeatures, groups, and tags are read.
+        #
         #
         # so the file we write is:
         #
@@ -235,9 +263,10 @@ class SandboxAdapter:
         # [2] x nwords
         # [3] x nPhotos from node features file
         #
+        # ...the features in [3] are *words*, not tags.
+        #
         # Interestingly, [1] and [2] are discarded, so we can minimize them here.
         #
-        # I don't see how this isn't redundant vis-a-vis the node features file.
         #
 
         with open(fn, 'w') as f:
@@ -245,22 +274,25 @@ class SandboxAdapter:
             # write a fake [1] and [2]
 
             f.write( '1\n' )
-            f.write( 'this_word_is_not_used\n' )
+            f.write( '0 this_word_is_not_used\n' )
 
             # write [3]
 
             for i in sorted( image_table.entries.iteritems(), key=lambda x:x[1] ):
                 (img_id, user) = (i[1].mir_id, i[1].flickr_owner)
+
+                # how many IILUT entries of type 'W' or 'B' are we looking for?
                 ii = image_indicator_table.image_indicators[ img_id ]
-                n = len(ii.word_list)
+                wb_list = [i for i in ii.word_list.keys() if (iilut.tag_word_text_src[i] in ['W','B'])]
+                n = len(wb_list)
                 f.write('%d %s %d ' % (img_id, user, n))
-                for j in ii.word_list.keys():
+                for j in wb_list:
                     f.write('%d:1 ' % j )
                 f.write('\n')
             # all done
 
     @staticmethod
-    def write_id_file( fn, image_table, image_indicator_table ):
+    def write_id_file( fn, image_table, image_indicator_table, iilut ):
         #
         # genericdata.cpp:80 ... this is the "group ID" file (training only)
         #
@@ -280,15 +312,17 @@ class SandboxAdapter:
         #
 
         label2group = dict()  # key: label ID; val: set of group IDs
-        label2word = dict()   # key: label ID; val: set of word IDs
+        label2tag = dict()   # key: label ID; val: set of tag IDs
 
         for (img_id, img) in image_table.entries.iteritems():
             ii = image_indicator_table.image_indicators[ img_id ]
             lv = img.label_vector
+
             if len(label2group) == 0:
                 for i in range(0,len(lv)):
                     label2group[i] = set()
-                    label2word[i] = set()
+                    label2tag[i] = set()
+
             for label_index in range(0, len(lv)):
                 if lv[label_index] != 1:
                     continue
@@ -297,23 +331,24 @@ class SandboxAdapter:
                 for i in ii.group_list.iteritems():
                     label2group[label_index].add( i[0] )
                 for i in ii.word_list.iteritems():
-                    label2word[label_index].add( i[0] )
+                    if iilut.tag_word_text_src[i[0]] in ['T','B']:
+                        label2tag[label_index].add( i[0] )
 
         with open(fn, 'w') as f:
             for i in sorted( label2group.iteritems(), key=lambda x:x[1] ):
                 label_index = i[0]
-                (g, w) = (label2group[label_index], label2word[label_index])
-                f.write('%d labelname-not-used %d %d ' % (i[0], len(g), len(w)))
+                (g, t) = (label2group[label_index], label2tag[label_index])
+                f.write('%d labelname-not-used %d %d ' % (i[0], len(g), len(t)))
                 for j in g:
                     f.write('%d:3 ' % j)
-                for j in w:
+                for j in t:
                     f.write('%d:3 ' % j)
                 f.write('\n')
 
         # all done
 
     @staticmethod
-    def write_text_id_file( fn, x ):
+    def write_text_id_file( fn, image_table, image_indicator_table, iilut ):
         #
         # genericdata.cpp:145
         #
@@ -323,25 +358,177 @@ class SandboxAdapter:
         #
         # ...[1], [2], [3] repeated for each label. Within each label, [3]
         # repeated for each word associated with the label. flag value
-        # needs to be >2. 
+        # needs to be >2.
+
+        label2word = dict()   # key: label ID; val: set of word IDs
+
+        for (img_id, img) in image_table.entries.iteritems():
+            ii = image_indicator_table.image_indicators[ img_id ]
+            lv = img.label_vector
+
+            if len(label2word) == 0:
+                for i in range(0,len(lv)):
+                    label2word[i] = set()
+
+            for label_index in range(0, len(lv)):
+                if lv[label_index] != 1:
+                    continue
+                # we now know that img_id is associated with label_index
+                # (assumes label_index == label_id, hmm)
+                for i in ii.word_list.iteritems():
+                    if iilut.tag_word_text_src[i[0]] in ['W']:
+                        label2word[label_index].add( i[0] )
+
+        with open(fn, 'w') as f:
+            for i in sorted( label2word.iteritems(), key=lambda x:x[1] ):
+                label_index = i[0]
+                w = label2word[label_index]
+                f.write('%d labelname-not-used %d ' % (i[0], len(w)))
+                for j in w:
+                    f.write('%d:3 ' % j)
+                f.write('\n')
+
+        # all done
+
+    def load( self ):
+        self.lt = LabelTable.read_from_file( self.files['lt'] )
+        sys.stderr.write('Info: loaded label table\n')
+        self.iilut = ImageIndicatorLookupTable.read_from_file( self.files['iilut'] )
+        if not self.iilut.verify():
+            sys.stderr.write('Exiting\n')
+            sys.exit(1)
+        sys.stderr.write('Info: loaded and verified image indicator lookup table\n')
+        self.train_it = ImageTable.read_from_file( self.files[ 'train-it' ] )
+        sys.stderr.write('Info: loaded training image table\n' )
+        self.test_it = ImageTable.read_from_file( self.files[ 'test-it' ] )
+        sys.stderr.write('Info: loaded testing image table\n' )
+        self.train_iit = ImageIndicatorTable.read_from_file( self.files[ 'train-iit'] )
+        sys.stderr.write('Info: loaded training image indicator table\n' )
+        self.test_iit = ImageIndicatorTable.read_from_file( self.files[ 'test-iit'] )
+        sys.stderr.write('Info: loaded testing image indicator table\n' )
+        self.train_et = EdgeTable.read_from_file( self.files[ 'train-et' ] )
+        sys.stderr.write('Info: loaded training edge table\n')
+        self.test_et = EdgeTable.read_from_file( self.files[ 'test-et' ] )
+        sys.stderr.write('Info: loaded testing edge table\n')
+
+    def write( self, out_dir ):
+        outfiles = dict()
+
+        outfiles['train-groupId'] = os.path.join(out_dir, 'groupIdFile.txt' )
+        outfiles['train-textId'] = os.path.join(out_dir, 'textIdFile.txt' )
+
+        outfiles['train-node'] = os.path.join(out_dir, 'nodeFeaturesTrain.txt' )
+        outfiles['test-node'] = os.path.join(out_dir, 'nodeFeaturesTest.txt' )
+
+        outfiles['train-text'] = os.path.join(out_dir, 'textFeaturesTrain.txt' )
+        outfiles['test-text'] = os.path.join(out_dir, 'textFeaturesTest.txt' )
+
+        outfiles['train-edge'] = os.path.join(out_dir, 'edgeFeaturesTrain.txt' )
+        outfiles['test-edge'] = os.path.join(out_dir, 'edgeFeaturesTest.txt' )
+
+        SandboxAdapter.write_node_features( outfiles['train-node'], self.iilut, self.lt, self.train_it, self.train_iit )
+        SandboxAdapter.write_node_features( outfiles['test-node'], self.iilut, self.lt, self.test_it, self.test_iit )
+        SandboxAdapter.write_edge_features( outfiles['train-edge'], self.train_et)
+        SandboxAdapter.write_edge_features( outfiles['test-edge'], self.test_et)
+        SandboxAdapter.write_text_features( outfiles['train-text'], self.train_it, self.train_iit, self.iilut )
+        SandboxAdapter.write_text_features( outfiles['test-text'], self.test_it, self.test_iit, self.iilut )
+        SandboxAdapter.write_id_file( outfiles['train-groupId'], self.train_it, self.train_iit, self.iilut )
+        SandboxAdapter.write_text_id_file( outfiles['train-textId'], self.train_it, self.train_iit, self.iilut )
+
+        for (label, id) in self.lt.label2id.iteritems():
+            label_fn = os.path.join(out_dir, 'labels_%02d_%s.txt' % (id,label))
+            model_fn = os.path.join(out_dir, 'models_%02d_%s.txt' % (id,label))
+            conf_fn = os.path.join(out_dir, '%02d-%s.conf' % (id, label))
+            with open( conf_fn, 'w') as f:
+                f.write('''
+//
+// Based on flickr_bmrm/bmrm-2.1/groups-bmrm/config_temp_airplane.conf
+//
+
+string Solver.type BMRM
+
+int BMRM.verbosity 2
+int BMRM.convergenceLog 0
+int BMRM.maxNumOfIter 500
+
+// tolerance for epsilon termination criterion (set negative value to disable this criterion)
+double BMRM.epsilonTol 1e-3
+
+// tolerance for gamma termination criterion (set negative value to disable this criterion)
+double BMRM.gammaTol -1
+
+// [optional] other possible choices {L2N2_prLOQO, L1N1_CLP}
+string BMRM.innerSolverType L2N2_qld
+
+int InnerSolver.verbosity 0
+string InnerSolver.gradType DENSE
+
+// [optional] maximum number of projection (to a feasible set) iterations
+int L2N2_DaiFletcherPGM.maxProjIter 200
+
+// [optional] maximum numnber of gradient projection iterations
+int L2N2_DaiFletcherPGM.maxPGMIter 100000
+
+// [optional] number of iterations an inactive gradient is allowed to remain in
+int L2N2_DaiFletcherPGM.gradIdleAge 10
+
+// [optional] maximum gradient set size
+int L2N2_DaiFletcherPGM.maxGradSetSize 5000
+
+// [optinal] tolerance
+double L2N2_DaiFletcherPGM.tolerance 1e-5
+
+string Loss.lossFunctionType GENERIC
+
+
+double EpsilonInsensitiveLoss.epsilon 0.1
+
+// verbosity level
+int Loss.verbosity 1
+
+int Data.verbosity 1
+int Data.biasFeature 0
+string Data.format GENERIC
+
+//////////////////////////////////////////////////
+// GENERIC parameters                           //
+//////////////////////////////////////////////////
+
+bool L2N2_BMRMDualInnerSolver.positivityConstraint true
+bool Data.trainingEvidence false
+
+bool Data.baseline false
+bool Data.useTagFeatures true
+bool Data.useGroupFeatures true
+bool Data.useSocialFeatures true
+bool Data.useImageFeatures false
+bool Data.useNodeFeatures true
+double BMRM.lambda 0.001
+''')
+                f.write('string Data.nodeFeaturesTrain %s\n' % outfiles['train-node'] )
+                f.write('string Data.nodeFeaturesTest %s\n' % outfiles['test-node'] )
+                f.write('string Data.textFeaturesTrain %s\n' % outfiles['train-text'] )
+                f.write('string Data.textFeaturesTest %s\n' % outfiles['test-text'] )
+                f.write('string Data.edgeFeaturesTrain %s\n' % outfiles['train-edge'] )
+                f.write('string Data.edgeFeaturesTest %s\n' % outfiles['test-edge'] )
+                f.write('string Data.imageFeaturesTrain null\n');
+                f.write('string Data.imageFeaturesTest null\n');
+                f.write('string Data.idFile %s\n' % outfiles['train-groupId'])
+                f.write('string Data.textIdFile %s\n' % outfiles['train-textId'])
+                f.write('string Data.labelOutput %s\n' % label_fn )
+                f.write('int Data.learnLabel %d\n' % id )
+                f.write('string Model.modelFile %s\n' % model_fn )
+
+            sys.stderr.write('Info: wrote %s\n' % conf_fn )
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        sys.stderr.write('Usage: $0 output-dir input-dir\n')
-        sys.exit(0)
-    (out_dir, in_dir) = (sys.argv[1], sys.argv[2])
-    lt = LabelTable.read_from_file( os.path.join( in_dir, 'label_table.txt' ))
-    sys.stderr.write('Info: loaded label table\n')
-    it = ImageTable.read_from_file( os.path.join( in_dir, 'image_table.txt' ))
-    sys.stderr.write('Info: loaded image table\n')
-    iit = ImageIndicatorTable.read_from_file( os.path.join( in_dir, 'image_indicator_table.txt' ))
-    sys.stderr.write('Info: loaded image indicator table\n')
-    iilut = ImageIndicatorLookupTable.read_from_file( os.path.join( in_dir, 'image_indicator_lookup_table.txt' ))
-    sys.stderr.write('Info: loaded IILUT\n')
-    et = EdgeTable.read_from_file( os.path.join( in_dir, 'image_edge_table.txt' ))
-    sys.stderr.write('Info: loaded edge table\n')
+    if len(sys.argv) != 2:
+        sys.stderr.write('Usage: $0 output-dir\n')
+        sys.exit(1)
+    out_dir = (sys.argv[1])
+    if not os.path.isdir( out_dir ):
+        os.mkdir(out_dir)
 
-    SandboxAdapter.write_node_features( os.path.join( out_dir, 'node_features.txt' ), iilut, lt, it, iit )
-    SandboxAdapter.write_edge_features( os.path.join( out_dir, 'edge_features.txt' ), et)
-    SandboxAdapter.write_text_features( os.path.join( out_dir, 'text_features.txt' ), it, iit )
-    SandboxAdapter.write_id_file( os.path.join( out_dir, 'id_file.txt' ), it, iit )
+    s = SandboxAdapter('.')
+    s.load()
+    s.write( out_dir )
