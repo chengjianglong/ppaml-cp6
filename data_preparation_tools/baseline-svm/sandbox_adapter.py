@@ -95,7 +95,18 @@ class SandboxAdapter:
         # Note that group_id, tag_id, label_id are all sequential:
         # the first tag_id is the last group_id + 1.
         #
+        # THE VALUES WRITTEN OUT IN [4] BECOME THE LABEL INDEX!! Regardless
+        # of what they are in our local label table!
+        #
         # Note also that these aren't the word features.
+        #
+        # HOWEVER, the indicator is directly indexed using (group,tag,label)
+        # IDs, so if (for example) groups go from 10-15, tags from 16-20,
+        # labels from 21-25, then there needs to be 0-9 '.' pre-padding on
+        # the indicator string.
+        #
+        # This is where the decision to keep group and tag/word indices
+        # separate in the IILUT comes back to bite us.
         #
 
         with open(fn, 'w') as f:
@@ -114,24 +125,30 @@ class SandboxAdapter:
             for i in sorted( ii_lookup_table.group_text_lut.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
                 f.write( '%d %s\n' % ( c, entry_text ))
+                ii_lookup_table.mcauley_group_id_map[ entry_id ] = c
                 c += 1
 
             # write the tag lines [3] .. not sure how McAuley's code handles UTF-8?
-            emitted_tag_ids = list()
-            for i in sorted( [v for k,v in ii_lookup_table.tag_word_text_lut.iteritems() if ii_lookup_table.tag_word_text_src[v] in ['T','B']]):
+            emitted_tag_our_ids = list()
+            for kv in sorted( ii_lookup_table.tag_word_text_lut.iteritems(), key=lambda x:x[1] ):
+                (k,v) = kv
+                # populate mcauley id map for all entries regardless of whether or not we emit
+                # here; this correctly sets the indicator length
                 (entry_id, entry_text) = (v, k)
-                f.write( '%d %s\n' % ( c, entry_text ))
-                emitted_tag_ids.append( entry_id )
+                ii_lookup_table.mcauley_tag_word_id_map[ entry_id ] = c
                 c += 1
+                if ii_lookup_table.tag_word_text_src[v] in ['T','B']:
+                    f.write( '%d %s\n' % ( c, entry_text ))
+                    emitted_tag_our_ids.append( entry_id )
 
-            if len(emitted_tag_ids) != nTags:
+            if len(emitted_tag_our_ids) != nTags:
                 raise AssertionError('Expected to emit %d tags but only wrote %d\n' %\
-                                     (nTags, len(emitted_tag_ids)))
+                                     (nTags, len(emitted_tag_our_ids)))
             # write the label lines [4]
-
             for i in sorted( label_table.label2id.iteritems(), key=lambda x:x[1] ):
                 (entry_id, entry_text) = (i[1], i[0])
                 f.write( '%d %s\n' % (c, entry_text ))
+                label_table.mcauley_id_map[ entry_id ] = c
                 c += 1
 
             # write the header line [5]
@@ -144,27 +161,26 @@ class SandboxAdapter:
             for i in sorted( image_table.entries.iteritems(), key=lambda x:x[1] ):
                 (img_id, user) = (i[1].mir_id, i[1].flickr_owner)
                 ii = image_indicator_table.image_indicators[ img_id ]
-                s = ''
+
+                indicator_array = ['.'] * c
                 for i in range(0, nGroups):
                     if i in ii.group_list:
-                        s += '1'
-                    else:
-                        s += '.'
+                        indicator_array[ ii_lookup_table.mcauley_group_id_map[ i ]] = '1'
+
                 for i in range(0, nTags):
-                    if emitted_tag_ids[i] in ii.word_list:
-                        s += '1'
-                    else:
-                        s += '.'
+                    if emitted_tag_our_ids[i] in ii.word_list:
+                        indicator_array[ ii_lookup_table.mcauley_tag_word_id_map[ emitted_tag_our_ids[i] ]] = '1'
+
                 lv = image_table.entries[ img_id ].label_vector
                 for i in range(0, nLabels):
                     v = lv[i]
+                    ind = label_table.mcauley_id_map[ i ]
                     if v == 1:
-                        s += '1'
+                        indicator_array[ ind ] = '1'
                     elif v == 0:
-                        s += '0'
-                    else:
-                        s += '.'
-                f.write('%d %s %s\n' %( img_id, user, s ))
+                        indicator_array[ ind ] = '0'
+
+                f.write('%d %s %s\n' %( img_id, user, ''.join( indicator_array ) ))
 
             # all done
 
@@ -256,25 +272,30 @@ class SandboxAdapter:
         #
         #
         # [1] nwords
-        # [2] word
+        # [2] wordID word
         # [3] photoID userID nFeatures {nFeatures x '%d:1'}
         #
         # [1] x 1
         # [2] x nwords
         # [3] x nPhotos from node features file
         #
-        # ...the features in [3] are *words*, not tags.
+        # ...the features in [3] are *words*, not tags. However the indcies are
+        # still pointing into the nodeFeatures indicator string.
         #
-        # Interestingly, [1] and [2] are discarded, so we can minimize them here.
+        # Although [1] and [2] are not used in genericdata.cpp, we'll
+        # write them out here to aid in debugging.
         #
         #
 
         with open(fn, 'w') as f:
 
-            # write a fake [1] and [2]
+            # [1] and [2]
 
-            f.write( '1\n' )
-            f.write( '0 this_word_is_not_used\n' )
+            all_word_id_list = sorted([w for w in iilut.tag_word_text_src.keys() if (iilut.tag_word_text_src[w] in ['W','B'])])
+            f.write( '%d\n' % len(all_word_id_list) )
+            for word_id in all_word_id_list:
+                mcauley_word_id = iilut.mcauley_tag_word_id_map[ word_id ]
+                f.write('%d %s\n' % (mcauley_word_id, iilut.rev_lookup('W', word_id)))
 
             # write [3]
 
@@ -283,16 +304,17 @@ class SandboxAdapter:
 
                 # how many IILUT entries of type 'W' or 'B' are we looking for?
                 ii = image_indicator_table.image_indicators[ img_id ]
-                wb_list = [i for i in ii.word_list.keys() if (iilut.tag_word_text_src[i] in ['W','B'])]
+                wb_list = [w for w in ii.word_list.keys() if (iilut.tag_word_text_src[w] in ['W','B'])]
                 n = len(wb_list)
                 f.write('%d %s %d ' % (img_id, user, n))
                 for j in wb_list:
-                    f.write('%d:1 ' % j )
+                    mcauley_word_id = iilut.mcauley_tag_word_id_map[ j ]
+                    f.write('%d:1 ' % mcauley_word_id )
                 f.write('\n')
             # all done
 
     @staticmethod
-    def write_id_file( fn, image_table, image_indicator_table, iilut ):
+    def write_id_file( fn, label_table, image_table, image_indicator_table, iilut ):
         #
         # genericdata.cpp:80 ... this is the "group ID" file (training only)
         #
@@ -338,17 +360,20 @@ class SandboxAdapter:
             for i in sorted( label2group.iteritems(), key=lambda x:x[1] ):
                 label_index = i[0]
                 (g, t) = (label2group[label_index], label2tag[label_index])
-                f.write('%d labelname-not-used %d %d ' % (i[0], len(g), len(t)))
+                mcauley_id = label_table.mcauley_id_map[ label_index ]
+                f.write('%d %s %d %d ' % (mcauley_id, label_table.id2label[label_index], len(g), len(t)))
                 for j in g:
-                    f.write('%d:3 ' % j)
+                    mcauley_id = iilut.mcauley_group_id_map[ j ]
+                    f.write('%d:3 ' % mcauley_id)
                 for j in t:
-                    f.write('%d:3 ' % j)
+                    mcauley_id = iilut.mcauley_tag_word_id_map[ j ]
+                    f.write('%d:3 ' % mcauley_id)
                 f.write('\n')
 
         # all done
 
     @staticmethod
-    def write_text_id_file( fn, image_table, image_indicator_table, iilut ):
+    def write_text_id_file( fn, label_table,image_table, image_indicator_table, iilut ):
         #
         # genericdata.cpp:145
         #
@@ -383,9 +408,11 @@ class SandboxAdapter:
             for i in sorted( label2word.iteritems(), key=lambda x:x[1] ):
                 label_index = i[0]
                 w = label2word[label_index]
-                f.write('%d labelname-not-used %d ' % (i[0], len(w)))
+                mcauley_id = label_table.mcauley_id_map[ label_index ]
+                f.write('%d %s %d ' % (mcauley_id, label_table.id2label[label_index], len(w)))
                 for j in w:
-                    f.write('%d:3 ' % j)
+                    mcauley_id = iilut.mcauley_tag_word_id_map[ j ]
+                    f.write('%d:3 ' % mcauley_id)
                 f.write('\n')
 
         # all done
@@ -426,19 +453,36 @@ class SandboxAdapter:
         outfiles['train-edge'] = os.path.join(out_dir, 'edgeFeaturesTrain.txt' )
         outfiles['test-edge'] = os.path.join(out_dir, 'edgeFeaturesTest.txt' )
 
-        SandboxAdapter.write_node_features( outfiles['train-node'], self.iilut, self.lt, self.train_it, self.train_iit )
-        SandboxAdapter.write_node_features( outfiles['test-node'], self.iilut, self.lt, self.test_it, self.test_iit )
-        SandboxAdapter.write_edge_features( outfiles['train-edge'], self.train_et)
-        SandboxAdapter.write_edge_features( outfiles['test-edge'], self.test_et)
-        SandboxAdapter.write_text_features( outfiles['train-text'], self.train_it, self.train_iit, self.iilut )
-        SandboxAdapter.write_text_features( outfiles['test-text'], self.test_it, self.test_iit, self.iilut )
-        SandboxAdapter.write_id_file( outfiles['train-groupId'], self.train_it, self.train_iit, self.iilut )
-        SandboxAdapter.write_text_id_file( outfiles['train-textId'], self.train_it, self.train_iit, self.iilut )
+        # remember McAuley label indices!
+        self.lt.mcauley_id_map = dict() # our ID to McAuley ID
+        self.iilut.mcauley_group_id_map = dict() # our ID to McAuley ID
+        self.iilut.mcauley_tag_word_id_map = dict() # our ID to McAuley ID
 
-        for (label, id) in self.lt.label2id.iteritems():
-            label_fn = os.path.join(out_dir, 'labels_%02d_%s.txt' % (id,label))
-            model_fn = os.path.join(out_dir, 'models_%02d_%s.txt' % (id,label))
-            conf_fn = os.path.join(out_dir, '%02d-%s.conf' % (id, label))
+        SandboxAdapter.write_node_features( outfiles['train-node'], self.iilut, self.lt, self.train_it, self.train_iit )
+        SandboxAdapter.write_text_features( outfiles['train-text'], self.train_it, self.train_iit, self.iilut )
+        SandboxAdapter.write_edge_features( outfiles['train-edge'], self.train_et)
+
+        # after investigation, McAuley's test formats are essentially the training files plus
+        # the payloads for testing appended onto them. Updating these tables handles
+        # the node, text, and edge files.
+
+        self.test_it.entries.update( self.train_it.entries )
+        self.test_iit.image_indicators.update( self.train_iit.image_indicators)
+        self.test_et.edges.extend( self.train_et.edges )
+
+        SandboxAdapter.write_node_features( outfiles['test-node'], self.iilut, self.lt, self.test_it, self.test_iit )
+        SandboxAdapter.write_text_features( outfiles['test-text'], self.test_it, self.test_iit, self.iilut )
+        SandboxAdapter.write_edge_features( outfiles['test-edge'], self.test_et)
+
+        # have to write these AFTER write_edge_features, because that sets all the mcauley_id_maps...
+        SandboxAdapter.write_text_id_file( outfiles['train-textId'], self.lt, self.train_it, self.train_iit, self.iilut )
+        SandboxAdapter.write_id_file( outfiles['train-groupId'], self.lt, self.train_it, self.train_iit, self.iilut )
+
+        for (label, our_id) in self.lt.label2id.iteritems():
+            mcauley_id = self.lt.mcauley_id_map[ our_id ]
+            label_fn = os.path.join(out_dir, 'labels_%02d_%s.txt' % (our_id,label))
+            model_fn = os.path.join(out_dir, 'models_%02d_%s.txt' % (our_id,label))
+            conf_fn = os.path.join(out_dir, '%02d_%s.conf' % (our_id, label))
             with open( conf_fn, 'w') as f:
                 f.write('''
 //
@@ -516,7 +560,7 @@ double BMRM.lambda 0.001
                 f.write('string Data.idFile %s\n' % outfiles['train-groupId'])
                 f.write('string Data.textIdFile %s\n' % outfiles['train-textId'])
                 f.write('string Data.labelOutput %s\n' % label_fn )
-                f.write('int Data.learnLabel %d\n' % id )
+                f.write('int Data.learnLabel %d\n' % mcauley_id )
                 f.write('string Model.modelFile %s\n' % model_fn )
 
             sys.stderr.write('Info: wrote %s\n' % conf_fn )
