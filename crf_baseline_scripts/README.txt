@@ -32,10 +32,15 @@ Experimental Setup:
 
 
 Instructions for training and testing with CRF:
-1- There are three config file parameters:
-	- f_load_edges: It can take a while to extract the edge features, but these are saved afterwards, so you can set this flag to load the previously extracted edge features the next time you run the code by seeting this to 1
-	- f_plot: Used for plotting ROC/PR curves, but these are not really that informative with this dataset, since there is an extremem imbalance between the number of true positives for a particular lable and the number of true negatives
-	- marbl_path
+1- There are seven config file parameters in the config file, crf_config_file.m:
+	- f_load_edges   : default [0], It can take a while to extract the edge features, but these are saved afterwards, so you can set this flag to load the previously extracted edge features the next time you run the code by seeting this to 1
+	- f_plot         : Used for plotting ROC/PR curves, but these are not really that informative with this dataset, since there is an extremem imbalance between the number of true positives for a particular lable and the number of true negatives
+	- marbl_path     : path to marbl toolbox
+	- data_type      : Parameters can change based on the dataset. This can be "sandbox" or "demo" for now. The default parameters for each dataset type are in crf_config_file.m
+	- num_Feat_Words : Only use the top num_Feat_Words most frequently occurring words, smaller value for smaller datasets
+    	- num_Feat_Groups: Only use the top num_Feat_Groups most frequently occurring groups
+    	- nvals          : Default [Number of labels+1], MIR has 24 labels, add one for "other"
+    	- num_class      : Default [number of labels], but can processes less than the number of classes (nvals-1) to speed things up
 2- execute the run.sh script (cd to 2015-10-public-sandbox folder and type the following in the terminal $ sh run.sh)
 3- You can also run the wrapper_crf_database_labeling_v2.m directly and step into the load_files_extract_structures.m and subroutines to determine how the raw data files are parsed.
  
