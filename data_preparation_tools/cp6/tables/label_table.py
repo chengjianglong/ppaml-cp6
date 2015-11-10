@@ -65,7 +65,7 @@ class LabelTable:
                 raw_line = f.readline()
                 if not raw_line:
                     break
-                fields = Util.qstr_split( raw_line )
+                fields = Util.qstr_split( raw_line.strip() )
                 I2L[ int(fields[0]) ] = fields[1]
                 L2I[ fields[1] ] = int(fields[0])
         return LabelTable( L2I, I2L)
