@@ -5,7 +5,7 @@
 
 function [img_info_list, group_edges, word_edges, same_info_edges, keep_Word_ind_LUT, keep_Group_ind_LUT, cliq_flags]=...
     load_files_extract_structures(img_table_fpath, f_read_all_img_data, img_ind_LUT_fpath,...
-    img_ind_table_fpath, num_Feat_Words, img_edge_table_fpath, f_load_edges, min_Num_Shard_Words, ...
+    img_ind_table_fpath, num_Feat_Words, num_Feat_Groups, img_edge_table_fpath, f_load_edges, min_Num_Shard_Words, ...
     keep_Word_ind_LUT, keep_Group_ind_LUT, output_path, f_eval)
     
 
@@ -43,7 +43,7 @@ img_info_list= extract_img_ind_table_structure(img_info_list, img_ind_table);
 %Calculate frequency of words in title and description and groups
 if(isempty(keep_Word_ind_LUT) && isempty(keep_Group_ind_LUT))
     [keep_Word_ind_LUT, keep_Group_ind_LUT]= ...
-        determine_most_frequent_values(ind_LUT, img_info_list, num_Feat_Words);
+        determine_most_frequent_values(ind_LUT, img_info_list, num_Feat_Words, num_Feat_Groups);
 end
 %**************************************************************************************************************
 %Edge Table **************************************************************************************************************
@@ -55,7 +55,7 @@ if(f_eval==0)
     [group_edges, word_edges, same_info_edges]= create_edge_data_structs(img_edge_table_fpath, 9, 8, f_load_edges, ...
         [img_info_list.ID], keep_Word_ind_LUT, keep_Group_ind_LUT, output_path);
     
-    tag_edges= squeeze(word_edges(:,:,2));
+    tag_edges= sum(word_edges(:,:,[1:4]),3);%+squeeze(word_edges(:,:,1))+squeeze(word_edges(:,:,3));
     %tag_edges(tag_edges < min_Num_Shard_Words)= 0;
     %group_edges(group_edges < min_Num_Shard_Words)= 0;
     
