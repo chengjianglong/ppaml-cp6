@@ -1,0 +1,60 @@
+#
+# id user label,label,... title tag,tag,... description text until end of line
+#
+
+100 user1 island vacation hawaii I went to hawaii had a blast
+101 user1 island vacation hawaii I went to hawaii
+102 user1 island vacation hawaii I went to hawaii had a ball
+103 user1 island vacation hawaii I went to hawaii
+104 user1 island vacation hawaii I went to hawaii had a blast
+105 user1 island vacation hawaii I went to hawaii
+106 user1 island vacation hawaii I went to hawaii had a ball
+107 user1 island vacation hawaii I went to hawaii
+108 user1 island vacation hawaii I went to hawaii had a blast
+109 user1 island vacation hawaii I went to hawaii
+110 user1 island vacation hawaii I went to hawaii had a ball
+111 user1 island vacation hawaii I went to hawaii
+112 user1 island vacation hawaii I went to hawaii had a blast
+113 user1 island vacation hawaii I went to hawaii
+114 user1 island vacation hawaii I went to hawaii had a ball
+115 user1 island vacation hawaii I went to hawaii
+116 user1 island vacation hawaii I went to hawaii had a blast
+117 user1 island vacation hawaii I went to hawaii
+118 user1 island vacation hawaii I went to hawaii had a ball
+119 user1 island vacation hawaii I went to hawaii
+120 user1 island vacation hawaii I went to hawaii had a blast
+121 user1 island vacation hawaii I went to hawaii
+122 user1 island vacation hawaii I went to hawaii had a ball
+123 user1 island vacation hawaii I went to hawaii
+124 user1 island vacation hawaii I went to hawaii had a blast
+125 user1 island vacation hawaii I went to hawaii
+126 user1 island vacation hawaii I went to hawaii had a ball
+127 user1 island vacation hawaii I went to hawaii
+128 user1 island vacation hawaii I went to hawaii had a blast
+129 user1 island vacation hawaii I went to hawaii
+130 user1 island vacation guam I went to guam had a ball
+131 user1 island vacation guam I went to guam
+132 user1 island vacation guam I went to guam had a blast
+133 user1 island vacation guam I went to guam
+134 user1 island vacation guam I went to guam had a ball
+135 user1 island vacation guam I went to guam
+150 user1 trees vacation seattle I went to seattle no parking
+151 user1 trees vacation seattle I went to seattle
+152 user1 trees vacation seattle I went to seattle good coffee
+153 user1 trees vacation seattle I went to seattle
+154 user1 trees vacation seattle I went to seattle no parking
+150 user1 trees vacation seattle I went to seattle
+151 user1 trees vacation seattle I went to seattle good coffee
+152 user1 trees vacation seattle I went to seattle
+153 user1 trees vacation seattle I went to seattle no parking
+154 user1 trees vacation seattle I went to seattle
+155 user1 trees vacation seattle I went to seattle good coffee
+156 user1 trees vacation seattle I went to seattle
+157 user1 trees vacation seattle I went to seattle no parking
+158 user1 trees vacation seattle I went to seattle
+159 user1 trees vacation seattle I went to seattle good coffee
+160 user1 trees vacation seattle I went to seattle
+161 user1 trees vacation seattle I went to seattle no parking
+162 user1 trees vacation seattle I went to seattle
+163 user1 trees vacation seattle I went to seattle good coffee
+164 user1 trees vacation seattle I went to seattle
