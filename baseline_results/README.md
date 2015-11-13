@@ -26,7 +26,7 @@ The graphs below show the output for three evaluations:
 
 ![MAP](mcauley-round-1-public-map.png)
 
-![PD](mcauley-round-1-public-PD.png)
+![PD](mcauley-round-1-public-pd.png)
 
 ---
 *questions, comments, &c to roddy.collins (at) kitware.com*
