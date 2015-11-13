@@ -22,7 +22,7 @@ The graphs below show the output for three evaluations:
 
 3. The "random-prior" results replace the computed result with a random 0 / 1 results selected proportionally to the distribution of the label in the truth set. This is the `--r p` flag to `cpy_eval.py`.
 
-![BER](https://github.com/GaloisInc/ppaml-cp6/baseline_results/mcauley-round-1-public-ber.png)
+![BER](mcauley-round-1-public-ber.png)
 
 ![MAP](https://github.com/GaloisInc/ppaml-cp6/baseline_results/mcauley-round-1-public-map.png)
 
