@@ -1,0 +1,401 @@
+--- ./flickr_bmrm/bmrm-2.1/data/genericdata.cpp	2012-07-17 14:25:37.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/data/genericdata.cpp	2015-11-04 02:12:47.000000000 -0500
+@@ -28,6 +28,9 @@
+ #include "set"
+ #include "model.hpp"
+ 
++#include <string>
++#include <sstream>
++
+ using namespace std;
+ 
+ // D dimensional inner product
+@@ -77,6 +80,7 @@
+   }
+   
+   // Read group and tag features
++  fprintf(stderr, "Opening group/tag file %s\n", idFile.c_str() );
+   FILE* idf = fopen(idFile.c_str(), "r");
+   int currentID;
+   vector<int> groupsToUse;
+@@ -95,11 +99,14 @@
+       float f;
+       fscanf(idf, "%d:%f", &x, &f);
+       if (currentID == learnLabel)
++      {
++        if (i == 0) fprintf(stderr, "Found label %d in groups: %s\n", currentID, idFile.c_str());
+         if (f > 2)
+         {
+           groupsToUse.push_back(x);
+           groupsToUseSet.insert(x);
+         }
++      }
+     }
+     for (int i = 0; i < NTags_; i ++)
+     {
+@@ -107,11 +114,14 @@
+       float f;
+       fscanf(idf, "%d:%f", &x, &f);
+       if (currentID == learnLabel)
++      {
++        if (i == 0) fprintf(stderr, "Found label %d in tags: %s\n", currentID, idFile.c_str());
+         if (f > 2 and not (config.GetBool("Data.baseline")))
+         {
+           tagsToUse.push_back(x);
+           tagsToUseSet.insert(x);
+         }
++      }
+     }
+     delete [] name;
+     if (currentID == learnLabel) break;
+@@ -136,6 +146,7 @@
+   }
+   
+   // Text features
++  fprintf(stderr, "Opening textId file %s\n", textIdFile.c_str() );
+   FILE* tidf = fopen(textIdFile.c_str(), "r");
+   vector<int> wordsToUse;
+   map<int, int> wordsToUseMap;
+@@ -152,6 +163,7 @@
+       fscanf(tidf, "%d:%f", &x, &f);
+       if (currentID == learnLabel)
+       {
++        if (i == 0) fprintf(stderr, "Found label %d in text %s\n", currentID, textIdFile.c_str());
+         if (f > 2 and not (config.GetBool("Data.baseline")))
+         {
+           wordsToUse.push_back(x);
+@@ -178,6 +190,7 @@
+   int nTagsPositive = tagsToUse.size();
+   
+   // Read remaining node features
++  fprintf(stderr, "Opening node file %s\n", nodeFile.c_str() );
+   FILE* nf = fopen(nodeFile.c_str(), "r");
+ 
+   fscanf(nf, "%d %d %d", &NGroups, &NTags, &NLabels);
+@@ -207,7 +220,7 @@
+     labelNames[id] = string(name);
+     delete [] name;
+   }
+-  fscanf(nf, "%d", &NPhotos);
++  fscanf(nf, "%d\n", &NPhotos);
+   
+   NGroups_ = groupsToUse.size();
+   NTags_ = tagsToUse.size();
+@@ -237,19 +250,46 @@
+     NTags_ = 0;
+     NWords_ = 0;
+   }
++  fprintf(stderr, "Debug: nIF %d + NG %d + NT %d + NW %d + NO %d == nNF %d\n",
++          nImageFeatures, NGroups_, NTags_, NWords_, NOthers, nNodeFeatures );
+ 
+   // Scale features
+   lossPositive = 0;
+   lossNegative = 0;
+-  for (int i = 0; i < NPhotos; i ++)
++  for (int ii = 0; ii < NPhotos; ii ++)
+   {
+     long photoId = 0;
+     char* userId = new char [50];
+-    char* indicator = new char [NGroups + NTags + NLabels + 2];
+-    fscanf(nf, "%ld %s %s", &photoId, userId, indicator);
++    //    char* indicator = new char [NGroups + NTags + NWords_ + NLabels + 2];
++
++    char *line = NULL;
++    size_t linecap = 0;
++    if (getline( &line, &linecap, nf ) == 0) {
++      fprintf(stderr, "ERROR: Failed to readline for photo # %d\n", ii);
++      exit(1);
++    }
++    std::istringstream iss( line );
++    std::string userIdStr, indicatorStr;
++    if ( ! ( iss >> photoId >> userIdStr >> indicatorStr )) {
++      fprintf(stderr, "ERROR: Couldn't parse photo/user/indicator for photo %d, line '%s'\n", ii, line  );
++      exit(1);
++    }
++    if (userIdStr.size() >= 50) {
++      fprintf(stderr, "ERROR: User ID too long\n");
++      exit(1);
++    }
++    char* indicator = new char[ indicatorStr.size() + 2 ];
++
++    strcpy( userId, userIdStr.c_str() );
++    strcpy( indicator, indicatorStr.c_str() );
++    free( line );
++
++    //    fscanf(nf, "%ld %s %s", &photoId, userId, indicator);
+ 
+-    nodeIndex[photoId] = i;
+-    indexNode[i] = photoId;
++    fprintf(stderr, "Debug: photoID %ld : indicator length %d\n", photoId, strlen(indicator));
++
++    nodeIndex[photoId] = ii;
++    indexNode[ii] = photoId;
+ 
+     double* feature = new double [nNodeFeatures];
+     for (int f = 0; f < nNodeFeatures; f ++)
+@@ -258,24 +298,31 @@
+     {
+       for (int i = 0; i < NGroups_; i ++)
+       {
++        if (ii==0) {
++          fprintf(stderr, "Debug: group %d groupsToUse[i] == %d indicator == %c\n", i, groupsToUse[i], indicator[groupsToUse[i]] );
++        }
+         if (indicator[groupsToUse[i]] == '1')
+           feature[nImageFeatures + i] = 1.0/NGroups_;
+         else feature[nImageFeatures + i] = 0;
+       }
+       for (int i = 0; i < NTags_; i ++)
+       {
++        if (ii==0) {
++          fprintf(stderr, "Debug: tag %d tagsToUse[i] == %d indicator == %c\n", i, tagsToUse[i], indicator[tagsToUse[i]] );
++        }
+         if (indicator[tagsToUse[i]] == '1')
+           feature[nImageFeatures + NGroups_ + i] = 1.0/NTags_;
+         else feature[nImageFeatures + NGroups_ + i] = 0;
+       }
+     }
+ 
+-    nodeFeatures[i] = feature;
+-    nodeLabels[i] = NEGATIVE;
+-    if (indicator[learnLabel] == '1') nodeLabels[i] = POSITIVE;
+-    if (indicator[learnLabel] == '0') nodeLabels[i] = NEGATIVE;
+-    if (nodeLabels[i] == POSITIVE) lossPositive ++;
+-    if (nodeLabels[i] == NEGATIVE) lossNegative ++;
++    nodeFeatures[ii] = feature;
++    nodeLabels[ii] = NEGATIVE;
++    fprintf(stderr, "Photo %d id %d: learnLabel %d, indicator[LL] = %c\n", ii, photoId, learnLabel,  indicator[learnLabel] );
++    if (indicator[learnLabel] == '1') nodeLabels[ii] = POSITIVE;
++    if (indicator[learnLabel] == '0') nodeLabels[ii] = NEGATIVE;
++    if (nodeLabels[ii] == POSITIVE) lossPositive ++;
++    if (nodeLabels[ii] == NEGATIVE) lossNegative ++;
+ 
+     delete [] userId;
+     delete [] indicator;
+@@ -284,14 +331,17 @@
+ 
+   if (config.GetBool("Data.useNodeFeatures"))
+   {
++    fprintf(stderr, "Opening text file %s\n", textFile.c_str() );
+     FILE* tf = fopen(textFile.c_str(), "r");
+     int NWords;
++    size_t line_c = 0;
+     fscanf(tf, "%d", &NWords);
+     for (int i = 0; i < NWords; i ++)
+     {
+       int wordID;
+       char* word = new char [1000];
+       fscanf(tf, "%d %s", &wordID, word);
++      ++line_c;
+       delete [] word;
+     }
+ 
+@@ -302,10 +352,14 @@
+       int nf;
+       if (not fscanf(tf, "%ld %s %d", &photoId, userId, &nf))
+       {
+-        printf("Expected ID and int\n");
++        printf("Expected ID and int: file %s photo %d line %lu\n", textFile.c_str(), i, line_c);
+         exit(1);
+       }
++      ++line_c;
+ 
++      if (nodeIndex.find(photoId) == nodeIndex.end()) {
++        fprintf(stderr, "nodeFeatures: photoID %ld not in nodeIndex\n", photoId);
++      }
+       double* feature = nodeFeatures[nodeIndex[photoId]] + nImageFeatures + NGroups_ + NTags_;
+       for (int i = 0; i < NWords_; i ++)
+       {
+@@ -447,6 +501,7 @@
+   int useTagFeatures = config.GetBool("Data.useTagFeatures");
+   if (config.GetBool("Data.useSocialFeatures"))
+   {
++    fprintf(stderr, "Opening edge file %s\n", edgeFile.c_str() );
+     FILE* ef = fopen(edgeFile.c_str(), "r");
+     int NE_;
+     fscanf(ef, "%d %d", &NE_, &nEdgeFeatures);
+@@ -463,7 +518,7 @@
+       else
+         thisNode = 1;
+       prevID = nID1;
+-      
++       
+       double* feature = new double [nEdgeFeatures];
+       
+       int total = 0;
+@@ -480,6 +535,13 @@
+         printf("Got self loop\n");
+         exit(1);
+       }
++
++      if (nodeIndex.find( nID1 ) == nodeIndex.end()) {
++        fprintf(stderr, "Edges: first edge id %ld not in node index\n", nID1 );
++      }
++      if (nodeIndex.find( nID2 ) == nodeIndex.end()) {
++        fprintf(stderr, "Edges: second edge id %ld not in node index\n", nID2 );
++      }
+       
+       if (!useGroupFeatures) feature[0] = 0;
+       if (!useTagFeatures) feature[1] = 0;
+--- ./flickr_bmrm/bmrm-2.1/linear-bmrm/Makefile	2012-07-17 14:01:24.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/linear-bmrm/Makefile	2015-11-04 01:35:46.000000000 -0500
+@@ -10,7 +10,7 @@
+ MPI_AVAILABLE=0
+ 
+ 
+-BOOST_DIR=../externalpackages/
++BOOST_DIR=/opt/local/include
+ UTILITIES_DIR=../utilities
+ DATA_DIR=../data
+ MODEL_DIR=../model
+@@ -43,11 +43,11 @@
+ ### for release ###
+ CFLAGS = -Wall -O3 -DNDEBUG ${INCLUDE_DIR}
+ 
+-LDFLAGS = 
++LDFLAGS = -L/opt/local/lib/gcc49
+ 
+ # use OpenMP for parallelization
+-CFLAGS += -fopenmp -DUSE_OPENMP
+-LDFLAGS  += -lgomp 
++#CFLAGS += -fopenmp -DUSE_OPENMP
++#LDFLAGS  += -lgomp 
+ 
+ # use Intel's Math Kernel Library (MKL)
+ #CFLAGS += -DUSE_MKL
+--- ./flickr_bmrm/bmrm-2.1/linear-bmrm/Makefile~	2012-07-17 14:01:24.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/linear-bmrm/Makefile~	2015-11-04 01:09:47.000000000 -0500
+@@ -10,7 +10,7 @@
+ MPI_AVAILABLE=0
+ 
+ 
+-BOOST_DIR=../externalpackages/
++BOOST_DIR=/opt/local/include
+ UTILITIES_DIR=../utilities
+ DATA_DIR=../data
+ MODEL_DIR=../model
+@@ -41,13 +41,13 @@
+ CFLAGS = -Wall -ggdb -g ${INCLUDE_DIR}
+ 
+ ### for release ###
+-# CFLAGS = -Wall -O3 -DNDEBUG ${INCLUDE_DIR}
++#CFLAGS = -Wall -O3 -DNDEBUG ${INCLUDE_DIR}
+ 
+-LDFLAGS = 
++LDFLAGS = -L/opt/local/lib/gcc49
+ 
+ # use OpenMP for parallelization
+-CFLAGS += -fopenmp -DUSE_OPENMP
+-LDFLAGS  += -lgomp 
++#CFLAGS += -fopenmp -DUSE_OPENMP
++#LDFLAGS  += -lgomp 
+ 
+ # use Intel's Math Kernel Library (MKL)
+ #CFLAGS += -DUSE_MKL
+--- ./flickr_bmrm/bmrm-2.1/solver/solver.mk	2011-10-04 13:58:12.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/solver/solver.mk	2015-06-11 08:57:48.000000000 -0400
+@@ -8,7 +8,7 @@
+ 	${CXX} ${CFLAGS} -c ${SOLVER_DIR}/bt.cpp  ${DEBUGFLAG}
+ 
+ bt_orig.o: ${SOLVER_DIR}/bt_orig.f
+-	gfortran -c -O3 ${SOLVER_DIR}/bt_orig.f
++	gfortran-mp-4.9 -c -O3 ${SOLVER_DIR}/bt_orig.f
+ 
+ BT_LDFLAGS = -lgfortran
+ SOLVER_OBJ += bt.o bt_orig.o
+@@ -52,7 +52,7 @@
+ 	${CXX} ${CFLAGS} -c ${INNER_SOLVER_DIR}/l2n2_qld.cpp
+ 
+ qld_patch.o: ${INNER_SOLVER_DIR}/qld_patch.f
+-	/usr/bin/gfortran -c ${INNER_SOLVER_DIR}/qld_patch.f
++	gfortran-mp-4.9 -c ${INNER_SOLVER_DIR}/qld_patch.f
+ 
+ l2n2_prloqo.o: ${INNER_SOLVER_DIR}/l2n2_prloqo.hpp ${INNER_SOLVER_DIR}/l2n2_prloqo.cpp l2n2_bmrmdualinnersolver.o ${UTILITIES_DIR}/common.hpp
+ 	${CXX} ${CFLAGS} -c ${INNER_SOLVER_DIR}/l2n2_prloqo.cpp 
+--- ./flickr_bmrm/bmrm-2.1/solver/bmrm.cpp	2011-10-28 20:29:04.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/solver/bmrm.cpp	2015-11-03 15:38:42.000000000 -0500
+@@ -235,6 +235,8 @@
+          prevEpsilon = epsilon;
+          gamma = exactObjVal - approxObjVal;
+          epsilon = minExactObjVal - approxObjVal;
++         if (fabs(epsilon)<1.0e-9) epsilon=0.0;
++         if (fabs(gamma)<1.0e-9) gamma=0.0;
+       
+          // Optional: Adjust inner solver optimization tolerance
+          //   This reduces the number of iteration most of the time.
+--- ./flickr_bmrm/bmrm-2.1/solver/bmrm.cpp_all	2011-10-04 13:58:12.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/solver/bmrm.cpp_all	2015-11-03 15:38:53.000000000 -0500
+@@ -235,6 +235,8 @@
+          prevEpsilon = epsilon;
+          gamma = exactObjVal - approxObjVal;
+          epsilon = minExactObjVal - approxObjVal;
++         if (fabs(epsilon)<1.0e-9) epsilon=0.0;
++         if (fabs(gamma)<1.0e-9) gamma=0.0;
+       
+          // Optional: Adjust inner solver optimization tolerance
+          //   This reduces the number of iteration most of the time.
+--- ./flickr_bmrm/bmrm-2.1/solver/bmrm.cpp_half	2011-10-04 13:58:12.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/solver/bmrm.cpp_half	2015-11-03 15:38:47.000000000 -0500
+@@ -235,6 +235,8 @@
+          prevEpsilon = epsilon;
+          gamma = exactObjVal - approxObjVal;
+          epsilon = minExactObjVal - approxObjVal;
++         if (fabs(epsilon)<1.0e-9) epsilon=0.0;
++         if (fabs(gamma)<1.0e-9) gamma=0.0;
+       
+          // Optional: Adjust inner solver optimization tolerance
+          //   This reduces the number of iteration most of the time.
+--- ./flickr_bmrm/bmrm-2.1/loss/genericloss.cpp	2012-07-17 14:25:21.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/loss/genericloss.cpp	2015-10-29 10:20:12.000000000 -0400
+@@ -26,7 +26,9 @@
+ #include "graph.h"
+ #include "unistd.h"
+ 
++#ifdef USE_OPENMP
+ #include <omp.h>
++#endif
+ 
+ // Use the balanced error rate
+ #define LOSS SCALED
+@@ -145,7 +147,9 @@
+ 
+   Cost* innerProducts00 = new Cost [E];
+   
++#ifdef USE_OPENMP
+   #pragma omp parallel for
++#endif
+   for (int i = 0; i < E; i ++)
+   {
+     innerProducts00[i] = inner_product(edgeFeatures[i], edgeTheta, DE);
+@@ -350,13 +354,15 @@
+     printf("scaled loss = %f\n", LabelLoss(data->nodeLabels, ybar, data->lossPositive, data->lossNegative, SCALED));
+     printf("AvP = %f\n", AvP(confidences, data->nodeLabels));
+     printf("loss = %f\n", LabelLoss(data->nodeLabels, ybar, data->lossPositive, data->lossNegative, LOSS));
+-    delete [] confidences;
++    printf("nYbar = %d; nConf = %d\n", static_cast<int>(ybar.size()), static_cast<int>(data->nodeFeatures.size()));
++    //rgcv    delete [] confidences;
+ 
+-    for (map<int,int>::iterator it = ybar.begin(); it != ybar.end(); it ++)
+-      if (it->second == 1)
+-        fprintf(f, "%ld\n", data->indexNode[it->first]);
++    for (map<int,int>::iterator it = ybar.begin(); it != ybar.end(); it ++) {
++      fprintf(f, "ybar: %d %d label %ld conf %d %f\n", it->first, it->second, data->indexNode[it->first], confidences[it->first].first, confidences[it->first].second);
++    }
++    delete [] confidences;
+   }
+-  
++
+   fclose(f);
+ }
+ 
+--- ./flickr_bmrm/bmrm-2.1/loss/ndcgrankloss.cpp	2011-10-04 13:58:12.000000000 -0400
++++ /Users/collinsr/work/ppaml/2015-06-mcauley-code/./flickr_bmrm/bmrm-2.1/loss/ndcgrankloss.cpp	2015-06-11 08:40:04.000000000 -0400
+@@ -24,7 +24,8 @@
+ #include "ndcgrankloss.hpp"
+ #include "sml.hpp"
+ #include "lap.hpp"
+-#include <ext/numeric>         // for iota
++//#include <ext/numeric>         // for iota
++#include <numeric>         // for iota
+ #include "configuration.hpp"
+ 
+ using namespace std;
