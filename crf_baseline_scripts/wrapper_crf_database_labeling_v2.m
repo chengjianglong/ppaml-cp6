@@ -15,7 +15,8 @@ addpath('.')
 dbstop if error
 f_runscript= 1;
 
-[f_load_edges, f_plot, marbl_path]= crf_config_file();
+[f_load_edges, f_plot, marbl_path, num_Feat_Words,...
+            num_Feat_Groups, nvals, num_class]= crf_config_file();
 
 if(~exist('f_load_edges') || isempty(f_load_edges))
     f_load_edges      = 1; %0=load previous calculate edge data, 1= calculate group and word edge data
@@ -36,26 +37,24 @@ end
 %*****************************************************************************************************
 if(f_runscript==0)%Use and modify when running directly in matlab, for experimentation purposes
     %Set Parameters
-    f_shuffle_data      = 0; %0= load previously shuffled data; 1= randomly shuffle data\
-    f_define_train_files= 0; %1= define model*.txt and data*.txt for training data
-    f_run_learning      = 0; %0= use previously learned model, 1= learn new model
-    num_Feat_Words      = 1000;%Only use the top num_Feat_Words most frequently occurring words
+    f_shuffle_data      = 1; %0= load previously shuffled data; 1= randomly shuffle data\
+    f_define_train_files= 1; %1= define model*.txt and data*.txt for training data
+    f_run_learning      = 1; %0= use previously learned model, 1= learn new model
+   
     f_read_all_img_data = 1;%0= only read label_vector of image table (last 24 values, comma separated), 1=read and store all data
-    nvals  = 25;%Number of labels, MIR has 24 labels, add one for "other"
     min_Num_Shard_Words = 3;
     TopN                = 10;%Number of nodes (images) to include in clique size
     
     n_fold      = 1; %Number of cross-validation iterations on training data
-    num_trian_ex= 4; %Split training data into this many examples
+    num_trian_ex= 2; %Split training data into this many examples
     num_test_ex = 1; %Split testing data into this many examples
 else%Use when running from the run.sh or command line
     %Set Parameters
     f_shuffle_data      = 1; %0= load previously shuffled data; 1= randomly shuffle data\
     f_define_train_files= 1; %1= define model*.txt and data*.txt for training data
     f_run_learning      = 1; %0= use previously learned model, 1= learn new model
-    num_Feat_Words      = 1000;%Only use the top num_Feat_Words most frequently occurring words
+
     f_read_all_img_data = 1;%0= only read label_vector of image table (last 24 values, comma separated), 1=read and store all data
-    nvals  = 25;%Number of labels, MIR has 24 labels, add one for "other"
     min_Num_Shard_Words = 3;
     TopN                = 10;%Number of nodes (images) to include in clique size
     
@@ -117,19 +116,19 @@ output_path_test         = regexprep(output_path,'training','testing');
 %Training featuers
 [img_info_list, group_edges, word_edges, same_info_edges, keep_Word_ind_LUT, keep_Group_ind_LUT, cliq_flags]= ...
     load_files_extract_structures(img_table_fpath, f_read_all_img_data, img_ind_LUT_fpath,...
-    img_ind_table_fpath, num_Feat_Words, img_edge_table_fpath, f_load_edges, min_Num_Shard_Words, [], [], output_path, 0);
+    img_ind_table_fpath, num_Feat_Words, num_Feat_Groups, img_edge_table_fpath, f_load_edges, min_Num_Shard_Words, [], [], output_path, 0);
 
 %Testing features
 [img_info_list_test, group_edges_test, word_edges_test, same_info_edges_test, ~, ~, cliq_flags_test]= ...
     load_files_extract_structures(img_table_fpath_test, f_read_all_img_data, img_ind_LUT_fpath,...
-    img_ind_table_fpath_test, num_Feat_Words, img_edge_table_fpath_test, f_load_edges, min_Num_Shard_Words,...
+    img_ind_table_fpath_test, num_Feat_Words, num_Feat_Groups, img_edge_table_fpath_test, f_load_edges, min_Num_Shard_Words,...
      keep_Word_ind_LUT, keep_Group_ind_LUT, output_path_test, 0);
 
 %Evalutation **************************************************************************************************************
 %Get img_info_list_test with evaluation labels for scoring classification results
 [img_info_list_eval, ~, ~, ~, ~, ~, ~]= ...
     load_files_extract_structures(img_table_eval_path, f_read_all_img_data, img_ind_LUT_fpath,...
-    img_ind_table_fpath_test, num_Feat_Words, img_edge_table_fpath_test, f_load_edges, min_Num_Shard_Words,...
+    img_ind_table_fpath_test, num_Feat_Words, num_Feat_Groups, img_edge_table_fpath_test, f_load_edges, min_Num_Shard_Words,...
      keep_Word_ind_LUT, keep_Group_ind_LUT, [], 1);
 
 %**************************************************************************************************************
@@ -145,7 +144,7 @@ test_data_locs= 1:num_test_nodes; %Use the same test data regardless of cross-va
 
 clear perf_stats
 
-for(cli=1:nvals-1)
+for(cli=1:num_class)%nvals-1)
     class_ind= cli;
     
     for(cvi=1:n_fold)
@@ -191,7 +190,11 @@ for(cli=1:nvals-1)
         if(num_trian_ex>1 && f_shuffle_data==1)
             save([class_cvi_path_train filesep 'train_ex_shuffled.mat'],'ex_iter')
         elseif(num_trian_ex>1)
-            load([class_cvi_path_train filesep 'train_ex_shuffled.mat'],'ex_iter')
+            try
+                load([class_cvi_path_train filesep 'train_ex_shuffled.mat'],'ex_iter')
+            catch
+               error('Most likely need to set f_shuffule_data to 0') 
+            end
         end
                 
         if(f_define_train_files==1)
@@ -281,7 +284,7 @@ end
 clear labelMat 
 output_labels= zeros(1,nvals);
 
-for(cli2=1:nvals-1)
+for(cli2=1:num_class)%:10)%nvals-1)
     labelMat{cli2}= []; %prob | labe (0= other, 1=current class)
 
     for(cvi=1:n_fold)
@@ -297,6 +300,8 @@ for(cli2=1:nvals-1)
 end
 [perf_stats_all]= calculate_stats_and_store(labelMat, f_plot);
 
+[perf_stats_all.meanAP]
+
 save([output_path_test filesep 'perf_stats_all.mat'],'perf_stats_all')
 
 %Write out image classification table
@@ -309,6 +314,8 @@ threshold_file= ones(1,nvals-1)*0.5;
 [fid,msg1]= fopen([output_path_test filesep 'label_threshold.txt'],'w');
 fprintf(fid,[repmat('%f ',1,nvals-1) '\n'],threshold_file');
 fclose(fid);
+
+fid;
 
 %**************************************************************************************************************
 %*******************************************************************************************

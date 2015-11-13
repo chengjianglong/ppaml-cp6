@@ -95,7 +95,7 @@ class ImageTable:
                 if not raw_line:
                     break
                 c += 1
-                fields = Util.qstr_split( raw_line )
+                fields = Util.qstr_split( raw_line.strip() )
                 if len(fields) != 10:
                     raise AssertionError( 'Image table %s:%d: found %d fields, expecting 10' % (fn, c, len(fields)))
                 id = int( fields[0] )

@@ -188,7 +188,7 @@ for i in range(0, nLabels):
     score_map = dict()  # key: image_id, val: score
     correct_map = dict() # key: image_id, val: True if correct, False if not
 
-    (n_instances, n_true_pos, n_computed_pos_correct, n_computed_pos_wrong, n_true_neg, n_computed_neg_correct, n_computed_neg_wrong) = (0,0,0,0,0,0,0)
+    (n_instances, n_true_pos, n_predicted_pos_correct, n_predicted_pos_wrong, n_true_neg, n_predicted_neg_correct, n_predicted_neg_wrong) = (0,0,0,0,0,0,0)
 
     for (image_id, true_image_entry) in true_it.entries.iteritems():
         if image_id_state_map[ image_id ] != 0x03:
@@ -206,16 +206,20 @@ for i in range(0, nLabels):
             n_true_pos += 1
             result = (s >= t)
             if result:
-                n_computed_pos_correct += 1
+                # truth is 1, result is 1: got it!
+                n_predicted_pos_correct += 1
             else:
-                n_computed_neg_wrong += 1
+                # truth is 1, result is 0: false negative
+                n_predicted_neg_wrong += 1
         elif r == 0:
             n_true_neg += 1
             result = (s < t)
             if result:
-                n_computed_neg_correct += 1
+                # truth is 0, result is 0: got it!
+                n_predicted_neg_correct += 1
             else:
-                n_computed_pos_wrong += 1
+                # truth is 0, result is 1: false positive
+                n_predicted_pos_wrong += 1
         else:
             raise AssertionError( 'Image %d label %d: unexpected label vector value %f\n' % (image_id, i, r))
 
@@ -241,11 +245,11 @@ for i in range(0, nLabels):
 
     sys.stdout.write('%d,%s,' % (i, lt.id2label[i]))
     sys.stdout.write('%0.5f,%d,' % (meanavgprec, n_predictions) )
-    ber_pos = (1.0 * n_computed_pos_correct / n_true_pos) / n_true_neg
-    ber_neg = (1.0 * n_computed_neg_correct / n_true_neg) / n_true_pos
-    ber = (ber_pos + ber_neg) / 2.0
+    false_positive_rate = 1.0 * n_predicted_pos_wrong / n_true_neg
+    false_negative_rate = 1.0 * n_predicted_neg_wrong / n_true_pos
+    ber = (false_positive_rate + false_negative_rate) / 2.0
     sys.stdout.write('%0.5f,' % ber )
     sys.stdout.write('%d,%d,%0.5f,' % (n_instances, n_correct_total, 1.0*n_correct_total/n_instances))
-    sys.stdout.write('%d,%d,%0.5f,%d,' % (n_true_pos, n_computed_pos_correct, 1.0*n_computed_pos_correct / n_true_pos,n_computed_pos_wrong ))
-    sys.stdout.write('%d,%d,%d\n' % (n_true_neg, n_computed_neg_correct,n_computed_neg_wrong))
+    sys.stdout.write('%d,%d,%0.5f,%d,' % (n_true_pos, n_predicted_pos_correct, 1.0*n_predicted_pos_correct / n_true_pos,n_predicted_pos_wrong ))
+    sys.stdout.write('%d,%d,%d\n' % (n_true_neg, n_predicted_neg_correct,n_predicted_neg_wrong))
 

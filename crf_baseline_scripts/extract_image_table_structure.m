@@ -24,14 +24,14 @@ for(imi=1:length(img_table))
         exif_processed = 0;
         locality_processed= 0;
         label_processed   = 0;
-        for(cli=quote_locs(2)+1:length(img_table{imi})-20)%scane line looking for each deliminator, space, ", none, comma: trying to get to label_vector, but may need other info, so reading all of it
+        for(cli=quote_locs(2)+1:length(img_table{imi}))%scane line looking for each deliminator, space, ", none, comma: trying to get to label_vector, but may need other info, so reading all of it
             if(cli>=line_ptr)
                 if(img_table{imi}(cli)=='"' && title_processed==0)%find title surrounded by quotes or none string
                     end_quote_loc= cli+min(strfind(img_table{imi}(cli+1:end),'"'));%should exist
                     cur_title_str= img_table{imi}(cli+1:end_quote_loc-1);%Not currently used for anything
                     line_ptr= end_quote_loc+1;%skip to next character after end quote
                     title_processed= line_ptr;
-                elseif(strcmp(img_table{imi}(cli:cli+3),'none') && title_processed==0)
+                elseif(cli+3<=length(img_table{imi}) && strcmp(img_table{imi}(cli:cli+3),'none') && title_processed==0)
                     line_ptr= cli+4; %no title, so skip to next field
                     title_processed= line_ptr;
                 elseif(img_table{imi}(cli)=='"' && title_processed>0 && desc_processed==0)%find description surrounded by quotes or none string
@@ -39,7 +39,7 @@ for(imi=1:length(img_table))
                     cur_desc_str= img_table{imi}(cli+1:end_quote_loc-1);%Not currently used for anything
                     line_ptr= end_quote_loc;%skip to next character after end quote
                     desc_processed= line_ptr;
-                elseif(strcmp(img_table{imi}(cli:cli+3),'none') && title_processed>0 && desc_processed==0)
+                elseif(cli+3<=length(img_table{imi}) && strcmp(img_table{imi}(cli:cli+3),'none') && title_processed>0 && desc_processed==0)
                     line_ptr= cli+4; %no title, so skip to next field
                     desc_processed= line_ptr;
                 elseif(cli> desc_processed && desc_processed>0 && exif_processed==0)%read exif_date, exif_time, exif_flash
@@ -54,12 +54,13 @@ for(imi=1:length(img_table))
                     cur_locality_str= img_table{imi}(cli+1:end_quote_loc-1);%Not currently used for anything
                     line_ptr= end_quote_loc+1;%skip to next character after end quote
                     locality_processed= line_ptr;
-                elseif(strcmp(img_table{imi}(cli:cli+3),'none') && locality_processed==0)
+                elseif(cli+3<=length(img_table{imi}) && strcmp(img_table{imi}(cli:cli+3),'none') && locality_processed==0)
                     line_ptr= cli+4; %no locality, so skip to next field
                     locality_processed= line_ptr;
                 elseif(cli> locality_processed && locality_processed>0 && label_processed==0)
                     label_vector = strread(img_table{imi}(cli:end), '%d', 'delimiter', ',');
                     label_processed= 1;
+                    line_ptr= length(img_table{imi})+1;
                 end
             end
         end

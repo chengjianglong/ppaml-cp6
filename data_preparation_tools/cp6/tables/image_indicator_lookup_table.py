@@ -57,7 +57,8 @@ from cp6.utilities.image_indicator import ImageIndicator
 #
 # We'll keep tag and text in a single dictionary and a single domain of
 # entry IDs. It's a little inconsistent but I think it's the lowest-
-# impact way to add text back in.
+# impact way to add text back in. (although it makes things messy
+# in the sandbox_adapter.)
 #
 
 class ImageIndicatorLookupTable:
