@@ -24,9 +24,9 @@ The graphs below show the output for three evaluations:
 
 ![BER](mcauley-round-1-public-ber.png)
 
-![MAP](https://github.com/GaloisInc/ppaml-cp6/baseline_results/mcauley-round-1-public-map.png)
+![MAP](mcauley-round-1-public-map.png)
 
-![PD](https://github.com/GaloisInc/ppaml-cp6/baseline_results/mcauley-round-1-public-PD.png)
+![PD](mcauley-round-1-public-PD.png)
 
 ---
 *questions, comments, &c to roddy.collins (at) kitware.com*
