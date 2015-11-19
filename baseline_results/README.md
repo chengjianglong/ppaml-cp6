@@ -1,8 +1,14 @@
-# McAuley's scores on round-1-public
+# Sample scores on round-1-public
+
+Two sample non-probabilistic solutions to CP6 are available. The first is the implementation from McAuley's original paper; the second is a sample CRF implementation available in the `baseline\_crf\_scripts` directory of the CP6 git repository.
+
+Scores from McAuley's implementation are presented here; scores from the sample CRF implementation are in preparation. Once available, this page will be updated to reflect them.
+
+## McAuley's scores on round-1-public
 
 These are the results of running round-1-public through the implementation from McAuley's original paper. [His web page is here](http://cseweb.ucsd.edu/~jmcauley/), the relevant section is under "2012: Image labeling on a network: using social-network metadata for image classification."
 
-## Running PPAML on McAuley's code
+### Running PPAML on McAuley's code
 
 The file `ppaml-tweaks.patch` contains some random fixes I made to McAuley's code, mostly to clean up the parser so it would pass valgrind without complaining. I compiled and ran the code on OS X.
 
@@ -12,7 +18,7 @@ The `sandbox_adapter.py` script converts a PPAML sandbox into the set of files e
 
 The scripts `train-all-labels.sh` and `test-all-labels.sh` run McAuley's code to train and test across all the labels for round 1. The perl script `mcauley2ppaml.pl` converts the output from the `test-all-labels.sh` script into the format expected by the PPAML scoring code in `cp6_eval.py`.  The file `bmrm-thresh.txt` contains the thresholds used to convert floating point values to 0/1 decisions (the thresholds are all zero.)
 
-## The results
+### The results
 
 The graphs below show the output for three evaluations:
 
