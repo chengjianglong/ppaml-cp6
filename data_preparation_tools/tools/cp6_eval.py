@@ -177,7 +177,7 @@ sys.stderr.write('Unscored:   %d\n' % image_id_state_map.values().count( 0x01 ))
 sys.stderr.write('Extraneous: %d\n' % image_id_state_map.values().count( 0x02 ))
 
 # emit CSV header
-sys.stdout.write('"index","label","MAP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong"\n')
+sys.stdout.write('"index","label","MAP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong","FPR","FNR"\n')
 
 for i in range(0, nLabels):
     # create mapping from computed score to correct/incorrect
@@ -251,5 +251,7 @@ for i in range(0, nLabels):
     sys.stdout.write('%0.5f,' % ber )
     sys.stdout.write('%d,%d,%0.5f,' % (n_instances, n_correct_total, 1.0*n_correct_total/n_instances))
     sys.stdout.write('%d,%d,%0.5f,%d,' % (n_true_pos, n_predicted_pos_correct, 1.0*n_predicted_pos_correct / n_true_pos,n_predicted_pos_wrong ))
-    sys.stdout.write('%d,%d,%d\n' % (n_true_neg, n_predicted_neg_correct,n_predicted_neg_wrong))
+    sys.stdout.write('%d,%d,%d,' % (n_true_neg, n_predicted_neg_correct,n_predicted_neg_wrong))
+    sys.stdout.write('%0.5f,%0.5f'% (false_positive_rate, false_negative_rate))
+    sys.stdout.write('\n')
 
