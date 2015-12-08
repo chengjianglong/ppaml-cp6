@@ -32,6 +32,7 @@
 import sys
 import copy
 import time
+import cProfile
 
 from cp6.utilities.image_edge import ImageEdge
 
@@ -72,6 +73,7 @@ class EdgeTable:
                                          ImageEdge.canonical_flag( e.shared_contact_flag )))
         return (c_total, c_written)
 
+
     @staticmethod
     def read_from_file( fn, id_dict_to_keep=None ):
         edges = list()
@@ -90,9 +92,12 @@ class EdgeTable:
                 (image_A_id, image_B_id) = (int(fields[0]), int(fields[1]))
                 if (id_dict_to_keep is None) or ( (image_A_id in id_dict_to_keep) and (image_B_id in id_dict_to_keep)):
                     # n_groups = fields[2], n_words = fields[3]
-                    sharedGroups = map( int, fields[4].split(',')) if fields[4] != 'none' else list()
-                    sharedWords = map( int, fields[5].split(',')) if fields[5] != 'none' else list()
-                    sharedWordTypes = map( int, fields[6].split(',')) if fields[6] != 'none' else list()
+#                    sharedGroups = map( int, fields[4].split(',')) if fields[4] != 'none' else list()
+#                    sharedWords = map( int, fields[5].split(',')) if fields[5] != 'none' else list()
+#                    sharedWordTypes = map( int, fields[6].split(',')) if fields[6] != 'none' else list()
+                    sharedGroups = [int(s) for s in fields[4].split(',')] if fields[4] != 'none' else list()
+                    sharedWords = [int(s) for s in fields[5].split(',')] if fields[5] != 'none' else list()
+                    sharedWordTypes =  [int(s) for s in fields[6].split(',')] if fields[6] != 'none' else list()
                     edges.append( ImageEdge( image_A_id, image_B_id, \
                                              sharedGroups, sharedWords, sharedWordTypes, \
                                              fields[7], fields[8], fields[9] ))
@@ -101,9 +106,12 @@ class EdgeTable:
         return EdgeTable( edges )
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        sys.stderr.write('Usage: $0 input-edge-table output-edge-table\n')
+    if (len(sys.argv) != 3) and (len(sys.argv) != 2):
+        sys.stderr.write('Usage: $0 input-edge-table [output-edge-table]\n')
         sys.exit(0)
-    t = EdgeTable.read_from_file( sys.argv[1] )
-    sys.stderr.write('Info: edge table has %d entries\n' % len(t.edges))
-    t.write_to_file( sys.argv[2] )
+    if len(sys.argv) == 3:
+        t = EdgeTable.read_from_file( sys.argv[1] )
+        sys.stderr.write('Info: edge table has %d entries\n' % len(t.edges))
+        t.write_to_file( sys.argv[2] )
+    else:
+        cProfile.run( 'EdgeTable.read_from_file( sys.argv[1] )')
