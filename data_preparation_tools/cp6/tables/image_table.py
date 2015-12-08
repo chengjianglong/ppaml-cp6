@@ -52,7 +52,8 @@ class ImageTable:
         if filter_package is not None:
             write_label_vector_as_testing = filter_package[1]
 
-        (c_total, c_written) = (0,0)
+        sys.stderr.write('Info: writing image table %s; label vectors as testing? %d\n' % (fn, write_label_vector_as_testing ))
+        (c_total, c_written, c_neg2_but_not_testing) = (0,0,0)
         with codecs.open( fn, 'w', encoding='UTF-8' ) as f:
             for mir_id in sorted( self.entries ):
                 e = self.entries[ mir_id ]
@@ -82,7 +83,15 @@ class ImageTable:
                     for i in range(0, len(v)):
                         if v[i] != -1:
                             v[i] = -2
+                else:
+                    # sanity check: if this is NOT testing, there should be no -2 values
+                    if v.count(-2):
+                        c_neg2_but_not_testing += 1
+
                 f.write( '%s\n' % ','.join(map(str, v))) # 9
+        if c_neg2_but_not_testing != 0:
+            sys.stderr.write('WARNING\nWARNING\nWARNING: %s not written as testing, but contained %d (of %d) images with -2 in the label vector\nWARNING\WARNING\n'\
+                              % (c_neg2_but_not_testing, c_written))
         return (c_total, c_written)
 
     @staticmethod
