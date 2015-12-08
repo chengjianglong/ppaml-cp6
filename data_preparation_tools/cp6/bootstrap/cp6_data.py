@@ -135,22 +135,21 @@ class CP6Data:
 
     def set_label_vector_from_split( self, data_split, id ):
         v = []
-        if data_split.mode == DataSplit.TEST:
-            for i in self.label_table.idset:
-                if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
-                    v.append( -1 )
+        # Previously, we checked for test / train here and wrote out '-2'
+        # if it was testing. However, there's no way to get the answer
+        # key for the private sandbox-- I think I had planned to "fix that later."
+        # Well, later is now; now we always set the label vector and let the
+        # sandbox code convert to -2 values for the test tables.
+
+        my_labels = self.get_mirlabel_set( id )
+        for i in self.label_table.idset:
+            if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
+                v.append( -1 )
+            else:
+                if self.label_table.id2label[i] in my_labels:
+                    v.append( 1 )
                 else:
-                    v.append( -2 )
-        else:
-            my_labels = self.get_mirlabel_set( id )
-            for i in self.label_table.idset:
-                if (self.label_table.id2label[i] == 'structures') and (data_split.round == 1):
-                    v.append( -1 )
-                else:
-                    if self.label_table.id2label[i] in my_labels:
-                        v.append( 1 )
-                    else:
-                        v.append( 0 )
+                    v.append( 0 )
         return v
 
 
