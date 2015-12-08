@@ -121,7 +121,7 @@ class SandboxPaths:
         fn = os.path.join( self.dirs[ dst_dir_tag ], 'image_table.txt' )
         sys.stderr.write( 'Info: writing %s\n' % fn )
         (c_total, c_written) = self.image_table.write_to_file( fn, filter_package )
-        sys.stderr.write( 'Info: wrote %d of %d edges to %s\n' % (c_written, c_total, fn ))
+        sys.stderr.write( 'Info: wrote %d of %d images to %s\n' % (c_written, c_total, fn ))
 
     def downsample_id_files( self, dst_dir_tag, ids ):
         gsrc =  os.path.join( self.src_dir, 'id-based', '*.txt')
