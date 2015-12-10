@@ -80,14 +80,14 @@ def calculate_MAP(correct_map, score_map):
     (n_predictions, n_correct_so_far, sum_ap) = (0, 0, 0)
     for (image_id, score) in sorted( score_map.items(), key=lambda x:-x[1]):
         # stop computing once we run out of non-zero responses
-        if score > 0:
-            n_predictions += 1
-            if correct_map[ image_id ]:
-                n_correct_so_far += 1
-                sum_ap += 1.0 * n_correct_so_far / n_predictions
+        if score <= 0:
+            break
+        n_predictions += 1
+        if correct_map[ image_id ]:
+            n_correct_so_far += 1
+            sum_ap += 1.0 * n_correct_so_far / n_predictions
 
-    meanavgprec = 1.0*sum_ap / n_predictions if n_predictions > 0 else -1
-    return meanavgprec
+    return 1.0*sum_ap / n_predictions if n_predictions > 0 else -1
 
 # MAP test case
 def mk_correct_map():
