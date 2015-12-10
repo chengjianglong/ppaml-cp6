@@ -76,12 +76,6 @@ from cp6.tables.image_table import ImageTable
 from cp6.utilities.image_table_entry import ImageTableEntry
 from cp6.tables.label_table import LabelTable
 
-def mk_correct_map():
-    return { 0:1, 1:0, 2:1, 3:0, 4:1, 5:1}
-
-def mk_score_map():
-    return { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
-
 def calculate_MAP(correct_map, score_map):
     (n_predictions, n_correct_so_far, sum_ap) = (0, 0, 0)
     for (image_id, score) in sorted( score_map.items(), key=lambda x:-x[1]):
@@ -90,11 +84,18 @@ def calculate_MAP(correct_map, score_map):
             n_predictions += 1
             if correct_map[ image_id ]:
                 n_correct_so_far += 1
-            this_ap = 1.0 * n_correct_so_far / n_predictions
-            sum_ap += this_ap
+                sum_ap += 1.0 * n_correct_so_far / n_predictions
 
     meanavgprec = 1.0*sum_ap / n_predictions if n_predictions > 0 else -1
     return meanavgprec
+
+# MAP test case
+def mk_correct_map():
+    return { 0:1, 1:0, 2:1, 3:0, 4:1, 5:1}
+def mk_score_map():
+    return { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
+def test_MAP():
+    return 0.4888888888888889 == calculate_MAP(mk_correct_map(), mk_score_map())
 
 def main():
     parser = argparse.ArgumentParser( description='PPAML CP6 evaluation' )
