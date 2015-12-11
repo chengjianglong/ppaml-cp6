@@ -76,7 +76,10 @@ from cp6.tables.image_table import ImageTable
 from cp6.utilities.image_table_entry import ImageTableEntry
 from cp6.tables.label_table import LabelTable
 
-def calculate_MAP(correct_map, score_map):
+def mean(ls):
+    return sum(ls) / len(ls)
+
+def calculate_AP(correct_map, score_map):
     (n_predictions, n_correct_so_far, sum_ap) = (0, 0, 0)
     for (image_id, score) in sorted( score_map.items(), key=lambda x:-x[1]):
         # stop computing once we run out of non-zero responses
@@ -88,17 +91,17 @@ def calculate_MAP(correct_map, score_map):
             sum_ap += 1.0 * n_correct_so_far / n_predictions
 
     n_actuals = correct_map.values().count(1)
-    meanavgprec = 1.0*sum_ap / n_actuals if n_actuals > 0 else -1
-    return (meanavgprec, n_predictions)
+    avgprec = 1.0*sum_ap / n_actuals if n_actuals > 0 else -1
+    return (avgprec, n_predictions)
 
-# MAP test case
+# AP test case
 def mk_correct_map():
     return { 0:1, 1:0, 2:1, 3:0, 4:1, 5:1}
 def mk_score_map():
     return { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
-def test_MAP():
+def test_AP():
     expected = 0.7333333333333333
-    actual = calculate_MAP(mk_correct_map(), mk_score_map())
+    actual = calculate_AP(mk_correct_map(), mk_score_map())
     print "Expected: ", expected
     print "Actual: ", actual
     return expected == actual
@@ -205,7 +208,9 @@ def main():
     sys.stderr.write('Extraneous: %d\n' % image_id_state_map.values().count( 0x02 ))
 
 # emit CSV header
-    sys.stdout.write('"index","label","MAP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong","FPR","FNR"\n')
+    sys.stdout.write('"index","label","AP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong","FPR","FNR"\n')
+
+    avgprecList = []
 
     for i in range(0, nLabels):
         # create mapping from computed score to correct/incorrect
@@ -257,12 +262,13 @@ def main():
             sys.stderr.write('Skipping label %d: %s\n'% (i,lt.id2label[i]))
             continue
 
-        meanavgprec, n_predictions = calculate_MAP(correct_map, score_map)
+        avgprec, n_predictions = calculate_AP(correct_map, score_map)
+        avgprecList.append(avgprec)
 
         n_correct_total = correct_map.values().count( True )
 
         sys.stdout.write('%d,%s,' % (i, lt.id2label[i]))
-        sys.stdout.write('%0.5f,%d,' % (meanavgprec, n_predictions) )
+        sys.stdout.write('%0.5f,%d,' % (avgprec, n_predictions) )
         false_positive_rate = 1.0 * n_predicted_pos_wrong / n_true_neg
         false_negative_rate = 1.0 * n_predicted_neg_wrong / n_true_pos
         ber = (false_positive_rate + false_negative_rate) / 2.0
@@ -272,6 +278,12 @@ def main():
         sys.stdout.write('%d,%d,%d,' % (n_true_neg, n_predicted_neg_correct,n_predicted_neg_wrong))
         sys.stdout.write('%0.5f,%0.5f'% (false_positive_rate, false_negative_rate))
         sys.stdout.write('\n')
+
+    meanavgprec = mean(avgprecList)
+    sys.stdout.write('\n\nMAP: %f' % meanavgprec)
+    if -1 in avgprecList:
+        sys.stdout.write('\nWarning: one of the APs returned -1. This means there were no actual positives for that label.')
+
 
 if __name__ == "__main__":
     main()
