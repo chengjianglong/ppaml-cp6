@@ -87,7 +87,8 @@ def calculate_MAP(correct_map, score_map):
             n_correct_so_far += 1
             sum_ap += 1.0 * n_correct_so_far / n_predictions
 
-    return 1.0*sum_ap / n_predictions if n_predictions > 0 else -1
+    n_actuals = correct_map.values().count(1)
+    return 1.0*sum_ap / n_actuals if n_actuals > 0 else -1
 
 # MAP test case
 def mk_correct_map():
@@ -95,7 +96,11 @@ def mk_correct_map():
 def mk_score_map():
     return { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
 def test_MAP():
-    return 0.4888888888888889 == calculate_MAP(mk_correct_map(), mk_score_map())
+    expected = 0.7333333333333333
+    actual = calculate_MAP(mk_correct_map(), mk_score_map())
+    print "Expected: ", expected
+    print "Actual: ", actual
+    return expected == actual
 
 def main():
     parser = argparse.ArgumentParser( description='PPAML CP6 evaluation' )
