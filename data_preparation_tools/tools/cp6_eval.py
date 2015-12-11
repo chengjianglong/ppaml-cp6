@@ -88,7 +88,8 @@ def calculate_MAP(correct_map, score_map):
             sum_ap += 1.0 * n_correct_so_far / n_predictions
 
     n_actuals = correct_map.values().count(1)
-    return 1.0*sum_ap / n_actuals if n_actuals > 0 else -1
+    meanavgprec = 1.0*sum_ap / n_actuals if n_actuals > 0 else -1
+    return (meanavgprec, n_predictions)
 
 # MAP test case
 def mk_correct_map():
@@ -256,7 +257,7 @@ def main():
             sys.stderr.write('Skipping label %d: %s\n'% (i,lt.id2label[i]))
             continue
 
-        meanavgprec = calculate_MAP(correct_map, score_map)
+        meanavgprec, n_predictions = calculate_MAP(correct_map, score_map)
 
         n_correct_total = correct_map.values().count( True )
 
