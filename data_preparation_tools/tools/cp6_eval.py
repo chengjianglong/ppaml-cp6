@@ -37,8 +37,8 @@
 ## [1] index:         label index
 ## [2] label:         label string
 ##
-## [3] MAP:           mean average precision
-## [4] n-predictions: number of predictions (non-zero scores) used in computing MAP
+## [3] mAP:           mean average precision
+## [4] n-predictions: number of predictions (non-zero scores) used in computing mAP
 ## [5] BER:  balanced error rate
 ##
 ## [6] n-instances:   number of positive / negative examples of the label
@@ -280,7 +280,7 @@ def main():
         sys.stdout.write('\n')
 
     meanavgprec = mean(avgprecList)
-    sys.stdout.write('\n\nMAP: %f' % meanavgprec)
+    sys.stdout.write('\n\nmAP: %f' % meanavgprec)
     if -1 in avgprecList:
         sys.stdout.write('\nWarning: one of the APs returned -1. This means there were no actual positives for that label.')
 
