@@ -76,6 +76,30 @@ from cp6.tables.image_table import ImageTable
 from cp6.utilities.image_table_entry import ImageTableEntry
 from cp6.tables.label_table import LabelTable
 
+##
+## Terminology for mean average precision (mAP) as applied to PPAML CP6:
+##
+## N is the size of the entire set of test images; for any label, NRel
+## is the number of test images which have that label.
+##
+## Query: One query per label: "What images have this label?" Returns a response
+## set S of scores, |S| == N, such that S[i]>0 indicates some degree of confidence
+## the label applies. S[i] <= 0 indicates no confidence the label applies.
+## McAuley's code returns values [-1,1] with 0 being the binarization threshold,
+## the sample CRF code returns values [0,1].
+##
+## Precision at k (P@k): Sort the response by score; take T == the top k responses.
+## Let R == number of elements in T which are relevant (i.e. have the label.)
+## Precision@k == R / k.
+##
+## Average precision (AP): Sort response set by score; sweep k from 1:N. At each
+## k such that the k'th image has the label (i.e. relevant[k] == true), compute
+## P@k. The AP is the average of P@k, i.e. the sum of P@k divided by the number
+## of relevant retrievals (i.e. the number of images which truly have the label.)
+##
+## Mean average precision (mAP): The average of AP across the set of labels.
+##
+
 def mean(ls):
     return sum(ls) / len(ls)
 
