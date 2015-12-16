@@ -132,6 +132,23 @@ def test_AP():
     (ap_1, n_1) = calculate_AP(mk_correct_map(), mk_score_map())
     float_test( 'AP test #1', 0.7333333333333333, ap_1 )
 
+def test_mAP():
+    #
+    # based on slide 31 of https://www.cl.cam.ac.uk/teaching/2006/InfoRtrv/lec3.2.pdf
+    #
+    # set lower image IDs to have higher scores so they are "ranked" first
+    #
+    (q1_AP, n) = calculate_AP( {k: 1 if k in [1,3,6,10,20] else 0 for k in range(1, 21)}, \
+                               {k:21-k for k in range(1,21)} )
+    (q2_AP, n) = calculate_AP( {k: 1 if k in [1,3,15] else 0 for k in range(1, 16)}, \
+                               {k:16-k for k in range(1,16)} )
+    mAP = (q1_AP + q2_AP) / 2.0
+    (expected_q1_AP, expected_q2_AP) = (0.564, 0.623)
+    expected_mAP = (expected_q1_AP + expected_q2_AP) / 2.0
+    float_test( 'AP test #2', expected_q1_AP, q1_AP, 0.001 )
+    float_test( 'AP test #3', expected_q2_AP, q2_AP, 0.001 )
+    float_test( 'mAP test #1', expected_mAP, mAP, 0.001 )
+
 def main():
 
     # special-case the '--test' arg because the other options are 'required', and
@@ -140,6 +157,7 @@ def main():
 
     if sys.argv.count( '--test' ) > 0:
         test_AP()
+        test_mAP()
         sys.exit(0)
 
     parser = argparse.ArgumentParser( description='PPAML CP6 evaluation' )
