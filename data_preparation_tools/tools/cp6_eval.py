@@ -97,22 +97,36 @@ def calculate_AP(correct_map, score_map):
 # AP test case
 def mk_correct_map():
     return { 0:1, 1:0, 2:1, 3:0, 4:1, 5:1}
+
 def mk_score_map():
     return { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
+
+def float_test( msg, expected, actual, eps = 1.0e-4 ):
+    sys.stderr.write( 'TEST: %s expected: %f actual: %f pass: %s\n' % (msg, expected, actual, (abs(expected-actual) < eps)))
+
 def test_AP():
-    expected = 0.7333333333333333
-    actual = calculate_AP(mk_correct_map(), mk_score_map())
-    print "Expected: ", expected
-    print "Actual: ", actual
-    return expected == actual
+    (ap_1, n_1) = calculate_AP(mk_correct_map(), mk_score_map())
+    float_test( 'AP test #1', 0.7333333333333333, ap_1 )
 
 def main():
+
+    # special-case the '--test' arg because the other options are 'required', and
+    # we'd like to run with just '--test' without having to e.g. specify /dev/null
+    # four times
+
+    if sys.argv.count( '--test' ) > 0:
+        test_AP()
+        sys.exit(0)
+
     parser = argparse.ArgumentParser( description='PPAML CP6 evaluation' )
     parser.add_argument( '--r', '--rand', choices=['b','p'], help='b|p; Replace computed values with random 0/1 values over either [b]inary or [p]rior-of-truth distributions' )
     parser.add_argument( '--lt', required=True, help='Label table' )
     parser.add_argument( '--tt', required=True, help='Truth image table (aka answer key)' )
     parser.add_argument( '--ct', required=True, help='Computed image table (may be in reduced form)' )
     parser.add_argument( '--tht', required='True', help='Threshold table for converting soft thresholds into hard 0/1 values')
+
+    # arg is added for help screen but acted on in special-case above
+    parser.add_argument( '--test', action='store_true', help='Run some sanity tests and exit')
 
     args = parser.parse_args()
 
