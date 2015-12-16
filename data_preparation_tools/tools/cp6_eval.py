@@ -318,9 +318,9 @@ def main():
         sys.stdout.write('\n')
 
     meanavgprec = mean(avgprecList)
-    sys.stdout.write('\n\nmAP: %f' % meanavgprec)
+    sys.stderr.write('\n\nmAP: %f' % meanavgprec)
     if -1 in avgprecList:
-        sys.stdout.write('\nWarning: one of the APs returned -1. This means there were no actual positives for that label.')
+        sys.stderr.write('\nWarning: one of the APs returned -1. This means there were no actual positives for that label.')
 
 
 if __name__ == "__main__":
