@@ -106,9 +106,6 @@ def mean(ls):
 def calculate_AP( relevant_map, score_map ):
     (n_retrievals, n_relevant_retrievals, sum_ap) = (0, 0, 0)
     for (image_id, score) in sorted( score_map.items(), key=lambda x:-x[1]):
-        # stop "retrieving" once the score drops <=0
-        if score <= 0:
-            break
         n_retrievals += 1
         if relevant_map[ image_id ]:
             n_relevant_retrievals += 1
@@ -212,13 +209,13 @@ def main():
 
     if args.r is not None:
         if args.r == 'b':
-            sys.stderr.write('Replacing computed answers with random 50/50 yes/no results...\n')
+            sys.stderr.write('Info: Replacing computed answers with random 50/50 yes/no results...\n')
             for (k, e) in computed_it.entries.iteritems():
                 for i in range(0, len(e.label_vector)):
                     e.label_vector[i] = random.choice( [-1, 1] )
 
         elif args.r == 'p':
-            sys.stderr.write('Replacing computed answers with random yes/no results based on truth priors...\n')
+            sys.stderr.write('Info: Replacing computed answers with random yes/no results based on truth priors...\n')
             # compute priors
             counts = [0] * nLabels
             for (k, e) in true_it.entries.iteritems():
@@ -258,9 +255,9 @@ def main():
         v = 0x03 if i in image_id_state_map else 0x01
         image_id_state_map[i] = v
 
-    sys.stderr.write('Scored:     %d\n' % image_id_state_map.values().count( 0x03 ))
-    sys.stderr.write('Unscored:   %d\n' % image_id_state_map.values().count( 0x01 ))
-    sys.stderr.write('Extraneous: %d\n' % image_id_state_map.values().count( 0x02 ))
+    sys.stderr.write('Info: Scored:     %d\n' % image_id_state_map.values().count( 0x03 ))
+    sys.stderr.write('Info: Unscored:   %d\n' % image_id_state_map.values().count( 0x01 ))
+    sys.stderr.write('Info: Extraneous: %d\n' % image_id_state_map.values().count( 0x02 ))
 
 # emit CSV header
     sys.stdout.write('"index","label","AP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong","FPR","FNR"\n')
@@ -316,7 +313,7 @@ def main():
             correct_map[ image_id ] = result
 
         if n_instances == 0:
-            sys.stderr.write('Skipping label %d: %s\n'% (i,lt.id2label[i]))
+            sys.stderr.write('Info: Skipping label %d: %s\n'% (i,lt.id2label[i]))
             continue
 
         avgprec, n_predictions = calculate_AP( relevant_map, score_map )
@@ -337,7 +334,7 @@ def main():
         sys.stdout.write('\n')
 
     meanavgprec = mean(avgprecList)
-    sys.stderr.write('Info: mAP: %f\n ' % meanavgprec)
+    sys.stderr.write('Info: mAP: %f\n' % meanavgprec)
     if -1 in avgprecList:
         sys.stderr.write('\nWarning: one of the APs returned -1. This means there were no actual positives for that label.')
 
