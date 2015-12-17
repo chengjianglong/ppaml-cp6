@@ -274,7 +274,8 @@ def main():
 
         t = threshold_table[i]
         score_map = dict()  # key: image_id, val: score
-        correct_map = dict() # key: image_id, val: True if correct, False if not
+        correct_map = dict() # key: image_id, val: True if correct, False if not -- this is NOT the "relevant" table used for AP
+        relevant_map = dict() # key: image_id, val: True is label is set, False if not
 
         (n_instances, n_true_pos, n_predicted_pos_correct, n_predicted_pos_wrong, n_true_neg, n_predicted_neg_correct, n_predicted_neg_wrong) = (0,0,0,0,0,0,0)
 
@@ -283,6 +284,7 @@ def main():
                 continue
             s = computed_it.entries[ image_id ].label_vector[ i ]
             r = true_image_entry.label_vector[ i ]
+            relevant_map[ image_id ] = r
             if r == -1:
                 # don't score this label; skip
                 continue
@@ -317,7 +319,7 @@ def main():
             sys.stderr.write('Skipping label %d: %s\n'% (i,lt.id2label[i]))
             continue
 
-        avgprec, n_predictions = calculate_AP(correct_map, score_map)
+        avgprec, n_predictions = calculate_AP( relevant_map, score_map )
         avgprecList.append(avgprec)
 
         n_correct_total = correct_map.values().count( True )
