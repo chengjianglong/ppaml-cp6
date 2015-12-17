@@ -103,20 +103,19 @@ from cp6.tables.label_table import LabelTable
 def mean(ls):
     return sum(ls) / len(ls)
 
-def calculate_AP(correct_map, score_map):
-    (n_predictions, n_correct_so_far, sum_ap) = (0, 0, 0)
+def calculate_AP( relevant_map, score_map ):
+    (n_retrievals, n_relevant_retrievals, sum_ap) = (0, 0, 0)
     for (image_id, score) in sorted( score_map.items(), key=lambda x:-x[1]):
-        # stop computing once we run out of non-zero responses
+        # stop "retrieving" once the score drops <0
         if score <= 0:
             break
-        n_predictions += 1
-        if correct_map[ image_id ]:
-            n_correct_so_far += 1
-            sum_ap += 1.0 * n_correct_so_far / n_predictions
+        n_retrievals += 1
+        if relevant_map[ image_id ]:
+            n_relevant_retrievals += 1
+            sum_ap += 1.0 * n_relevant_retrievals / n_retrievals
 
-    n_actuals = correct_map.values().count(1)
-    avgprec = 1.0*sum_ap / n_actuals if n_actuals > 0 else -1
-    return (avgprec, n_predictions)
+    avgprec = 1.0*sum_ap / n_relevant_retrievals if n_relevant_retrievals > 0 else -1
+    return (avgprec, n_retrievals)
 
 # AP test case
 def mk_correct_map():
