@@ -2,7 +2,7 @@
 
 Two sample non-probabilistic solutions to CP6 are available. The first is the implementation from McAuley's original paper; the second is a sample CRF implementation available in the `baseline\_crf\_scripts` directory of the CP6 git repository.
 
-Scores from McAuley's implementation are presented here; scores from the sample CRF implementation are in preparation. ~~Once available, this page will be updated to reflect them.~~
+Scores from McAuley's implementation are presented here; ~~scores from the sample CRF implementation are in preparation. Once available, this page will be updated to reflect them.~~
 
 ## Update: 17 Dec 2015
 
@@ -26,17 +26,17 @@ The scripts `train-all-labels.sh` and `test-all-labels.sh` run McAuley's code to
 
 The graphs below show the output for four evaluations:
 
-1. The "McAuley {BER, AP, PD}" line is the result from McAuley's code. These were plotted from the `mcauley-round-1-public.csv` file generated via `cp6_eval.py` above.
+1. The "McAuley {AP, BER, PD}" line is the result from McAuley's code. These were plotted from the `mcauley-round-1-public.csv` file generated via `cp6_eval.py` above.
 
-2. The "CRF {BER, AP, PD}" line is the result from the CRF implementation. These were plotted from the `crf-round-1-public.csv` file generated via `cp6_eval.py` above.
+2. The "CRF {AP, BER, PD}" line is the result from the CRF implementation. These were plotted from the `crf-round-1-public.csv` file generated via `cp6_eval.py` above.
 
 2. The "random-binary" results replace the computed result with a random 0 / 1 result selected with equal probability (i.e. a coin flip.) This is the `--r b` flag to `cp6_eval.py`.
 
 3. The "random-prior" results replace the computed result with a random 0 / 1 results selected proportionally to the distribution of the label in the truth set. This is the `--r p` flag to `cpy_eval.py`.
 
-![BER](round-1-public-ber.png)
+![MAP](round-1-public-ap.png)
 
-![MAP]round-1-public-ap.png)
+![BER](round-1-public-ber.png)
 
 ![PD](round-1-public-pd.png)
 
