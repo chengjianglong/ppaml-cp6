@@ -106,7 +106,7 @@ def mean(ls):
 def calculate_AP( relevant_map, score_map ):
     (n_retrievals, n_relevant_retrievals, sum_ap) = (0, 0, 0)
     for (image_id, score) in sorted( score_map.items(), key=lambda x:-x[1]):
-        # stop "retrieving" once the score drops <0
+        # stop "retrieving" once the score drops <=0
         if score <= 0:
             break
         n_retrievals += 1
