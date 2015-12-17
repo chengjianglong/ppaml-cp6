@@ -212,7 +212,7 @@ def main():
 
     if args.r is not None:
         if args.r == 'b':
-            sys.stderr.write('Replacing computed answers with randoom 50/50 yes/no results...\n')
+            sys.stderr.write('Replacing computed answers with random 50/50 yes/no results...\n')
             for (k, e) in computed_it.entries.iteritems():
                 for i in range(0, len(e.label_vector)):
                     e.label_vector[i] = random.choice( [-1, 1] )
@@ -335,7 +335,7 @@ def main():
         sys.stdout.write('\n')
 
     meanavgprec = mean(avgprecList)
-    sys.stderr.write('\n\nmAP: %f' % meanavgprec)
+    sys.stderr.write('Info: mAP: %f\n ' % meanavgprec)
     if -1 in avgprecList:
         sys.stderr.write('\nWarning: one of the APs returned -1. This means there were no actual positives for that label.')
 
