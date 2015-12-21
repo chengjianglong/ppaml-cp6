@@ -1,4 +1,4 @@
-"index","label","AP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong","FPR","FNR"
+"index","label","AP","n-predictions","BER","n-instances","n-correct","%-correct","n-true-pos","n-est-pos-correct","pD","n-est-pos-wrong","n-true-neg","n-est-neg-correct","n-est-neg-wrong","FPR","FNR" 
 0,animals,0.74933,2000,0.19915,2000,1618,0.80900,345,272,0.78841,309,1655,1346,73,0.18671,0.21159
 1,baby,0.25835,2000,0.25235,2000,1213,0.60650,28,25,0.89286,784,1972,1188,3,0.39757,0.10714
 2,bird,0.76395,2000,0.16734,2000,1582,0.79100,82,72,0.87805,408,1918,1510,10,0.21272,0.12195
