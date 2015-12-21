@@ -1,8 +1,12 @@
 # Sample scores on round-1-public
 
-Two sample non-probabilistic solutions to CP6 are available. The first is the implementation from McAuley's original paper; the second is a sample CRF implementation available in the `baseline\_crf\_scripts` directory of the CP6 git repository.
+Two sample non-probabilistic solutions to CP6 are available. The first is the implementation from McAuley's original paper; the second is a sample CRF implementation available in the `baseline_crf_scripts` directory of the CP6 git repository.
 
 Scores from McAuley's implementation are presented here; scores from the sample CRF implementation are in preparation. Once available, this page will be updated to reflect them.
+
+## Update: 21 Dec 2015
+
+Updated to report per-label AP. (mAP is now computed across all labels.)
 
 ## McAuley's scores on round-1-public
 
@@ -12,7 +16,7 @@ These are the results of running round-1-public through the implementation from 
 
 The file `ppaml-tweaks.patch` contains some random fixes I made to McAuley's code, mostly to clean up the parser so it would pass valgrind without complaining. I compiled and ran the code on OS X.
 
-Results are provided for BER (balanced error rate), MAP (mean average precision), and PD (probability of detection.)
+Results are provided for BER (balanced error rate), per-label AP (mean average precision) and all-labels mAP, and PD (probability of detection.)
 
 The `sandbox_adapter.py` script converts a PPAML sandbox into the set of files expected by McAuley's code, along with configuration files for each of the labels.
 
@@ -22,17 +26,17 @@ The scripts `train-all-labels.sh` and `test-all-labels.sh` run McAuley's code to
 
 The graphs below show the output for three evaluations:
 
-1. The "actual {BER, MAP, PD}" line is the result from McAuley's code. These were plotted from the `mcauley-round-1-public.csv` file generated via `cp6_eval.py` above.
+1. The "McAuley {AP, BER, PD}" line is the result from McAuley's code. These were plotted from the `mcauley-round-1-public.csv` file generated via `cp6_eval.py` above.
 
 2. The "random-binary" results replace the computed result with a random 0 / 1 result selected with equal probability (i.e. a coin flip.) This is the `--r b` flag to `cp6_eval.py`.
 
 3. The "random-prior" results replace the computed result with a random 0 / 1 results selected proportionally to the distribution of the label in the truth set. This is the `--r p` flag to `cpy_eval.py`.
 
-![BER](mcauley-round-1-public-ber.png)
+![MAP](round-1-public-ap.png)
 
-![MAP](mcauley-round-1-public-map.png)
+![BER](round-1-public-ber.png)
 
-![PD](mcauley-round-1-public-pd.png)
+![PD](round-1-public-pd.png)
 
 ---
 *questions, comments, &c to roddy.collins (at) kitware.com*
