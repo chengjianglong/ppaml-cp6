@@ -1,6 +1,6 @@
 # Sample scores on round-1-public
 
-Two sample non-probabilistic solutions to CP6 are available. The first is the implementation from McAuley's original paper; the second is a sample CRF implementation available in the `baseline\_crf\_scripts` directory of the CP6 git repository.
+Two sample non-probabilistic solutions to CP6 are available. The first is the implementation from McAuley's original paper; the second is a sample CRF implementation available in the `baseline_crf_scripts` directory of the CP6 git repository.
 
 Scores from McAuley's implementation are presented here; scores from the sample CRF implementation are in preparation. Once available, this page will be updated to reflect them.
 
