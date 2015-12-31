@@ -323,12 +323,13 @@ def main():
 
         sys.stdout.write('%d,%s,' % (i, lt.id2label[i]))
         sys.stdout.write('%0.5f,%d,' % (avgprec, n_predictions) )
-        false_positive_rate = 1.0 * n_predicted_pos_wrong / n_true_neg
-        false_negative_rate = 1.0 * n_predicted_neg_wrong / n_true_pos
+        false_positive_rate = (1.0 * n_predicted_pos_wrong / n_true_neg) if n_true_neg != 0 else 0
+        false_negative_rate = (1.0 * n_predicted_neg_wrong / n_true_pos) if n_true_pos != 0 else 0
         ber = (false_positive_rate + false_negative_rate) / 2.0
         sys.stdout.write('%0.5f,' % ber )
         sys.stdout.write('%d,%d,%0.5f,' % (n_instances, n_correct_total, 1.0*n_correct_total/n_instances))
-        sys.stdout.write('%d,%d,%0.5f,%d,' % (n_true_pos, n_predicted_pos_correct, 1.0*n_predicted_pos_correct / n_true_pos,n_predicted_pos_wrong ))
+        pD = (1.0*n_predicted_pos_correct / n_true_pos) if n_true_pos != 0 else 1
+        sys.stdout.write('%d,%d,%0.5f,%d,' % (n_true_pos, n_predicted_pos_correct, pD, n_predicted_pos_wrong))
         sys.stdout.write('%d,%d,%d,' % (n_true_neg, n_predicted_neg_correct,n_predicted_neg_wrong))
         sys.stdout.write('%0.5f,%0.5f'% (false_positive_rate, false_negative_rate))
         sys.stdout.write('\n')
