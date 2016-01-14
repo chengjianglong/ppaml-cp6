@@ -91,7 +91,7 @@ class ImageTable:
                 f.write( '%s\n' % ','.join(map(str, v))) # 9
         if c_neg2_but_not_testing != 0:
             sys.stderr.write('WARNING\nWARNING\nWARNING: %s not written as testing, but contained %d (of %d) images with -2 in the label vector\nWARNING\WARNING\n'\
-                              % (c_neg2_but_not_testing, c_written))
+                              % (fn, c_neg2_but_not_testing, c_written))
         return (c_total, c_written)
 
     @staticmethod
