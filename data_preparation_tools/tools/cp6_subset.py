@@ -43,6 +43,7 @@ import random
 
 from cp6.tables.edge_table import EdgeTable
 from cp6.tables.image_table import ImageTable
+from cp6.tables.image_indicator_table import ImageIndicatorTable
 
 #
 # src is a fully populated sandbox. given a set of image IDs (aka nodes)
@@ -339,6 +340,15 @@ if __name__ == '__main__':
     w.downsample_feature_files( 'run_testing', ids.ids_test.ids )
     # ...training
     w.downsample_feature_files( 'run_training', ids.ids_train.ids )
+
+    # image indicator tables:
+    # ...testing
+    iit_train = ImageIndicatorTable.read_from_file( os.path.join( w.src.dirs['run_training'], 'image_indicator_table.txt' ))
+    iit_train.write_to_file( os.path.join( w.dst.dirs['run_training'], 'image_indicator_table.txt' ), ids.ids_train.ids )
+    sys.stderr.write( 'Downsampled training image_indicator_table\n' )
+    iit_test = ImageIndicatorTable.read_from_file( os.path.join( w.src.dirs['run_testing'], 'image_indicator_table.txt' ))
+    iit_test.write_to_file( os.path.join( w.dst.dirs['run_testing'], 'image_indicator_table.txt' ), ids.ids_test.ids )
+    sys.stderr.write( 'Downsampled testing image_indicator_table\n' )
 
     ## all done!
 
