@@ -15,4 +15,4 @@ eval_output_dir=$3
 
 [ -d $eval_output_dir ] || mkdir $eval_output_dir
 
-python $ABSOLUTE_PATH/tools/cp6_eval.py --lt $eval_in/etc/label_table.txt --tt $eval_in/testing/image_table.txt --ct $run_out/testing/classified_labels.txt --tht $run_out/testing/label_threshold.txt &> $eval_output_dir/eval.log
+python $ABSOLUTE_PATH/tools/cp6_eval.py --lt $eval_in/etc/label_table.txt --tt $eval_in/testing/image_table.txt --ct $run_out/label_vectors_results.txt --tht $run_out/threshold_table.txt &> $eval_output_dir/eval.log
