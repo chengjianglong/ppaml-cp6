@@ -41,8 +41,6 @@ class ImageIndicatorTable:
     def write_to_file( self, fn, id_list = None ):
         if not id_list:
             id_list = sorted( self.image_indicators.keys() )
-        else:
-            sys.stderr.write( 'Debug: %s passed %d id_list' % (fn, len(id_list)))
         with open( fn, 'w' ) as f:
             for mir_id in sorted( id_list ):
                 imgind = self.image_indicators[ mir_id ]
