@@ -327,7 +327,7 @@ if __name__ == '__main__':
     # ...testing table
     w.downsample_image_file( w.image_table_test, 'run_testing', ids.ids_test.ids , True )
     # ....training
-    w.downsample_image_file( w.image_table_train, 'run_training', ids.ids_train.ids , True )
+    w.downsample_image_file( w.image_table_train, 'run_training', ids.ids_train.ids , False )
 
     # edge tables:
     # ...testing
