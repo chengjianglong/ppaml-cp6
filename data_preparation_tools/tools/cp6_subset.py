@@ -126,20 +126,43 @@ class SandboxSubsetWorker:
         # dst_dir_tag is either run_training or run_testing. ids is
         # the list of image IDs to write.
         fn = os.path.join( self.dst.dirs[ dst_dir_tag ], 'image_edge_table.txt' )
-        sys.stderr.write( 'Info: writing %s\n' % fn )
-        (c_total, c_written) = table.write_to_file( fn, ids )
-        sys.stderr.write( 'Info: wrote %d of %d edges to %s\n' % (c_written, c_total, fn ))
+        if ids == 'copy':
+            src_fn = os.path.join( self.src.dirs[ dst_dir_tag ], 'image_edge_table.txt' )
+            sys.stderr.write( 'Info: copying %s to %s\n' % (src_fn, fn) )
+            shutil.copy( src_fn, fn )
+        else:
+            sys.stderr.write( 'Info: writing %s\n' % fn )
+            (c_total, c_written) = table.write_to_file( fn, ids )
+            sys.stderr.write( 'Info: wrote %d of %d edges to %s\n' % (c_written, c_total, fn ))
 
     def downsample_image_file( self, table, dst_dir_tag, ids, testing_mode_flag ):
         # dst_dir_tag is one of run_training, run_testing, or eval_testing; ids is the
         # list of image IDs to write; testing_mode_flag is true if the
         # output image table is 'testing' (contains true image labels)
         # or 'training' (true image labels are masked.)
-        filter_package = (ids, testing_mode_flag )
         fn = os.path.join( self.dst.dirs[ dst_dir_tag ], 'image_table.txt' )
-        sys.stderr.write( 'Info: writing %s\n' % fn )
-        (c_total, c_written) = table.write_to_file( fn, filter_package )
-        sys.stderr.write( 'Info: wrote %d of %d images to %s\n' % (c_written, c_total, fn ))
+        if ids == 'copy':
+            src_fn = os.path.join( self.src.dirs[ dst_dir_tag ], 'image_table.txt' )
+            sys.stderr.write( 'Info: copying %s to %s\n' % (src_fn, fn))
+            shutil.copy( src_fn, fn )
+        else:
+            filter_package = (ids, testing_mode_flag )
+            sys.stderr.write( 'Info: writing %s\n' % fn )
+            (c_total, c_written) = table.write_to_file( fn, filter_package )
+            sys.stderr.write( 'Info: wrote %d of %d images to %s\n' % (c_written, c_total, fn ))
+
+    def downsample_image_indicator_file( self, dst_dir_tag, ids ):
+        src_fn = os.path.join( self.src.dirs[dst_dir_tag], 'image_indicator_table.txt' )
+        dst_fn = os.path.join( self.dst.dirs[dst_dir_tag], 'image_indicator_table.txt' )
+        if ids == 'copy':
+            sys.stderr.write( 'Info: copying %s to %s\n' % (src_fn, dst_fn))
+            shutil.copy( src_fn, dst_fn )
+        else:
+            sys.stderr.write( 'Info: writing %s\n' % dst_fn )
+            iit = ImageIndicatorTable.read_from_file( src_fn )
+            iit.write_to_file( dst_fn, ids )
+            sys.stderr.write( 'Info: wrote %d image indicator lines\n' % len(ids))
+
 
     def downsample_feature_files( self, dst_dir_tag, ids ):
         # These files can be subsampled without loading them into memory. dst_dir_tag is
@@ -152,30 +175,41 @@ class SandboxSubsetWorker:
         for fn in files:
             src = os.path.join( self.src.dirs[ dst_dir_tag ], fn )
             dst = os.path.join( self.dst.dirs[ dst_dir_tag ], fn )
-            c = 0
-            with open( src ) as f_in:
-                with open (dst, 'w') as f_out:
-                    while 1:
-                        raw_line = f_in.readline()
-                        if not raw_line:
-                            break
-                        d = raw_line.split()
-                        id = int(d[0])
-                        if id in ids:
-                            f_out.write( raw_line )
-                            c += 1
-            sys.stderr.write('Info: wrote %d lines to %s\n' % (c, dst ))
-
+            if ids == 'copy':
+                sys.stderr.write( 'Info: copying %s to %s\n' % (src, dst ))
+                shutil.copy( src, dst)
+            else:
+                c = 0
+                with open( src ) as f_in:
+                    with open (dst, 'w') as f_out:
+                        while 1:
+                            raw_line = f_in.readline()
+                            if not raw_line:
+                                break
+                            d = raw_line.split()
+                            id = int(d[0])
+                            if id in ids:
+                                f_out.write( raw_line )
+                                c += 1
+                sys.stderr.write('Info: wrote %d lines to %s\n' % (c, dst ))
 
     def cache_edge_tables( self, train_ids, test_ids ):
         # The edge tables can take a while to load.
-        sys.stderr.write( 'Info: loading training edge table filtered to %d nodes...\n' % len(train_ids ))
-        self.edge_table_train = EdgeTable.read_from_file( os.path.join( self.src.dirs['run_training'], 'image_edge_table.txt'), train_ids )
-        sys.stderr.write( 'Info: loaded %d training edges\n' % len(self.edge_table_train.edges))
+        if train_ids == 'copy':
+            sys.stderr.write( 'Info: training edge table will be copied\n' )
+            self.edge_table_train = 'copy'
+        else:
+            sys.stderr.write( 'Info: loading training edge table filtered to %d nodes...\n' % len(train_ids ))
+            self.edge_table_train = EdgeTable.read_from_file( os.path.join( self.src.dirs['run_training'], 'image_edge_table.txt'), train_ids )
+            sys.stderr.write( 'Info: loaded %d training edges\n' % len(self.edge_table_train.edges))
 
-        sys.stderr.write( 'Info: loading testing edge table filtered to %d nodes...\n' % len(test_ids ))
-        self.edge_table_test = EdgeTable.read_from_file( os.path.join( self.src.dirs['run_testing'], 'image_edge_table.txt'), test_ids )
-        sys.stderr.write( 'Info: loaded %d testing edges\n' % len(self.edge_table_test.edges))
+        if test_ids == 'copy':
+            sys.stderr.write( 'Info: testing edge table will be copied\n' )
+            self.edge_table_test = 'copy'
+        else:
+            sys.stderr.write( 'Info: loading testing edge table filtered to %d nodes...\n' % len(test_ids ))
+            self.edge_table_test = EdgeTable.read_from_file( os.path.join( self.src.dirs['run_testing'], 'image_edge_table.txt'), test_ids )
+            sys.stderr.write( 'Info: loaded %d testing edges\n' % len(self.edge_table_test.edges))
 
 
     def cache_image_tables( self ):
@@ -244,7 +278,7 @@ class IDSelectorSource:
                 sys.exit(1)
             if self.n == len(image_table.entries):
                 sys.stderr.write('Info: 100% of entries requested\n')
-                self.ids = image_table.entries.keys()
+                self.ids = 'copy'
             else:
                 self.ids = random.sample( image_table.entries.keys(), self.n )
 
@@ -346,13 +380,10 @@ if __name__ == '__main__':
     w.downsample_feature_files( 'run_training', ids.ids_train.ids )
 
     # image indicator tables:
+    # ...training
+    w.downsample_image_indicator_file( 'run_training', ids.ids_train.ids )
     # ...testing
-    iit_train = ImageIndicatorTable.read_from_file( os.path.join( w.src.dirs['run_training'], 'image_indicator_table.txt' ))
-    iit_train.write_to_file( os.path.join( w.dst.dirs['run_training'], 'image_indicator_table.txt' ), ids.ids_train.ids )
-    sys.stderr.write( 'Downsampled training image_indicator_table\n' )
-    iit_test = ImageIndicatorTable.read_from_file( os.path.join( w.src.dirs['run_testing'], 'image_indicator_table.txt' ))
-    iit_test.write_to_file( os.path.join( w.dst.dirs['run_testing'], 'image_indicator_table.txt' ), ids.ids_test.ids )
-    sys.stderr.write( 'Downsampled testing image_indicator_table\n' )
+    w.downsample_image_indicator_file( 'run_testing', ids.ids_test.ids )
 
     ## all done!
 
