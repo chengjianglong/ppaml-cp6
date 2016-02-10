@@ -566,13 +566,13 @@ double BMRM.lambda 0.001
             sys.stderr.write('Info: wrote %s\n' % conf_fn )
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.stderr.write('Usage: $0 output-dir\n')
+    if len(sys.argv) != 3:
+        sys.stderr.write('Usage: $0 input-dir output-dir\n')
         sys.exit(1)
-    out_dir = (sys.argv[1])
+    out_dir = (sys.argv[2])
     if not os.path.isdir( out_dir ):
         os.mkdir(out_dir)
 
-    s = SandboxAdapter('.')
+    s = SandboxAdapter(sys.argv[1])
     s.load()
     s.write( out_dir )
