@@ -242,7 +242,11 @@ class IDSelectorSource:
             if self.n > len(image_table.entries):
                 sys.stderr.write('ERROR: %s id source requested more samples than available; exiting\n' % self.which)
                 sys.exit(1)
-            self.ids = random.sample( image_table.entries.keys(), self.n )
+            if self.n == len(image_table.entries):
+                sys.stderr.write('Info: 100% of entries requested\n')
+                self.ids = image_table.entries.keys()
+            else:
+                self.ids = random.sample( image_table.entries.keys(), self.n )
 
 class IDSelector:
     def __init__( self, s ):
